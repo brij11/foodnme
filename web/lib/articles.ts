@@ -78,6 +78,38 @@ export async function listArticles(opts: {
   };
 }
 
+/** Full article row (includes the MDX body) for the detail page. */
+export type Article = ArticleListItem & {
+  content_mdx: string;
+  related_resource_slug: string | null;
+};
+
+const DETAIL_COLUMNS = `${LIST_COLUMNS}, content_mdx, related_resource_slug`;
+
+/** A single published article by slug, or null (404) if missing/unpublished. */
+export async function getArticleBySlug(slug: string): Promise<Article | null> {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("articles")
+    .select(DETAIL_COLUMNS)
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .maybeSingle();
+  if (error) throw new Error(`getArticleBySlug failed: ${error.message}`);
+  return (data as Article | null) ?? null;
+}
+
+/** All published slugs — for `generateStaticParams`. */
+export async function getPublishedSlugs(): Promise<string[]> {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("articles")
+    .select("slug")
+    .eq("is_published", true);
+  if (error) throw new Error(`getPublishedSlugs failed: ${error.message}`);
+  return ((data as { slug: string }[] | null) ?? []).map((r) => r.slug);
+}
+
 /** Published-article counts per category slug, plus `all` (used by the sidebar). */
 export async function getCategoryCounts(): Promise<Record<string, number>> {
   const supabase = createPublicClient();

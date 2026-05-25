@@ -2,14 +2,21 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/supabase/public", () => ({ createPublicClient: vi.fn() }));
 
-import { listArticles, getCategoryCounts, clampPage, parseSort } from "./articles";
+import {
+  listArticles,
+  getCategoryCounts,
+  getArticleBySlug,
+  getPublishedSlugs,
+  clampPage,
+  parseSort,
+} from "./articles";
 import { createPublicClient as createClient } from "@/lib/supabase/public";
 
 type ChainResult = { data: unknown; count?: number; error: null };
 
 function chain(result: ChainResult) {
   const obj: Record<string, unknown> = {};
-  for (const m of ["select", "eq", "order", "range"]) {
+  for (const m of ["select", "eq", "order", "range", "maybeSingle"]) {
     obj[m] = vi.fn(() => obj);
   }
   (obj as { then: unknown }).then = (resolve: (r: ChainResult) => unknown) => resolve(result);
@@ -60,6 +67,33 @@ describe("listArticles", () => {
     vi.mocked(createClient).mockReturnValue({ from: () => c2 } as never);
     await listArticles({ category: "all" });
     expect(c2.eq).not.toHaveBeenCalledWith("category", "all");
+  });
+});
+
+describe("getArticleBySlug / getPublishedSlugs (blog-02)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("returns the published article row for a slug", async () => {
+    const row = { slug: "haccp-rollout", title: "HACCP", is_published: true };
+    const c = chain({ data: row, error: null });
+    vi.mocked(createClient).mockReturnValue({ from: () => c } as never);
+
+    const article = await getArticleBySlug("haccp-rollout");
+    expect(article).toEqual(row);
+    expect(c.eq).toHaveBeenCalledWith("slug", "haccp-rollout");
+    expect(c.eq).toHaveBeenCalledWith("is_published", true);
+  });
+
+  it("returns null when no published row matches (→ 404)", async () => {
+    const c = chain({ data: null, error: null });
+    vi.mocked(createClient).mockReturnValue({ from: () => c } as never);
+    expect(await getArticleBySlug("missing")).toBeNull();
+  });
+
+  it("getPublishedSlugs maps to slug strings", async () => {
+    const c = chain({ data: [{ slug: "a" }, { slug: "b" }], error: null });
+    vi.mocked(createClient).mockReturnValue({ from: () => c } as never);
+    expect(await getPublishedSlugs()).toEqual(["a", "b"]);
   });
 });
 
