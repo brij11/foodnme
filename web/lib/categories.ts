@@ -35,6 +35,9 @@ export function templateCategory(slug: string): Category | undefined {
 export function articleCategoryLabel(slug: string): string {
   return articleCategory(slug)?.label ?? slug;
 }
+export function templateCategoryLabel(slug: string): string {
+  return templateCategory(slug)?.label ?? slug;
+}
 export function articleTagVariant(slug: string): TagVariant {
   return articleCategory(slug)?.tag ?? "green";
 }
