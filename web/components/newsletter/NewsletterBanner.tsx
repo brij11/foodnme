@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Turnstile } from "@/components/turnstile/Turnstile";
 import { Button } from "@/components/ui/Button";
+import { useFooterNewsletter } from "@/components/chrome/FooterNewsletterContext";
 import { cn } from "@/lib/utils/cn";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,6 +31,13 @@ export function NewsletterBanner({
   const [token, setToken] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  const { registerFullBanner } = useFooterNewsletter();
+
+  // A full (non-mini) banner registers itself so the Footer suppresses its mini variant.
+  useEffect(() => {
+    if (mini) return;
+    return registerFullBanner();
+  }, [mini, registerFullBanner]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
