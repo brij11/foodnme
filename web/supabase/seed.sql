@@ -1,0 +1,5 @@
+-- foodnme — dev seed (TECHNICAL-REQUIREMENTS.md §4.3). Ports prototype data.jsx content.
+-- Applied by `supabase db reset`. Sections are added by the stories that need them:
+--   • resources  → templates-01
+--   • articles   → blog-01 (+ MDX sample article → blog-03)
+-- Image URLs stay as Unsplash links for dev per §4.3.

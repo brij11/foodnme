@@ -1,0 +1,23 @@
+{
+  "root": true,
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "rules": {
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "MemberExpression[object.object.name='process'][object.property.name='env'][property.name='SUPABASE_SERVICE_ROLE_KEY']",
+        "message": "SUPABASE_SERVICE_ROLE_KEY must stay server-only. Reference it only in app/api/** or lib/supabase/service.ts (TECHNICAL-REQUIREMENTS.md §1, §9.3)."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["app/api/**/*.ts", "lib/supabase/service.ts"],
+      "rules": { "no-restricted-syntax": "off" }
+    },
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "e2e/**/*.ts"],
+      "rules": { "@typescript-eslint/no-explicit-any": "off" }
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────────────────
+   foodnme — design tokens (Fresh Sustainability Minimal palette).
+   These `--color-*` / `--radius-*` / shadow values are the single source the
+   Tailwind theme (tailwind.config.ts) references. Font `--font-*` vars are
+   bound by next/font in app/layout.tsx (homepage-01).
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Core palette */
+  --color-primary: #4c7c59;
+  --color-primary-deep: #3a6346;
+  --color-secondary: #7fb069;
+  --color-accent: #dda15e;
+  --color-background: #fcfcf8;
+  --color-text: #283618;
+
+  /* Extended */
+  --color-muted: #5f6b53;
+  --color-muted-2: #8a9482;
+  --color-border: #ece8d7;
+  --color-card-bg: #ffffff;
+  --color-surface-light: #f5f0e8;
+
+  /* Tags */
+  --color-tag-green-bg: #f1f8ec;
+  --color-tag-green-text: #3f6212;
+  --color-tag-orange-bg: #fff3e5;
+  --color-tag-orange-text: #9a3412;
+  --color-tag-safe-bg: #eef6ee;
+  --color-tag-safe-text: #166534;
+  --color-tag-neutral-bg: #f6f5ed;
+  --color-tag-neutral-text: #6b7280;
+
+  /* Feedback */
+  --color-error: #b91c1c;
+  --color-error-bg: #fef2f2;
+
+  /* Reading-progress strip (article pages drive this; default 0) */
+  --reading-progress: 0%;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background: var(--color-background);
+    color: var(--color-text);
+    font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+    color: var(--color-text);
+  }
+  ::selection {
+    background: rgba(76, 124, 89, 0.2);
+    color: var(--color-text);
+  }
+}
