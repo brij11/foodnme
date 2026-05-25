@@ -1,35 +1,28 @@
+import { MDXRemote } from "next-mdx-remote/rsc";
+import rehypeShiki from "@shikijs/rehype";
+import { buildMdxComponents } from "./mdx/components";
+
 /**
- * TEMPORARY raw-markdown fallback (blog-02). Renders the article body as paragraphs with
- * `##`/`###` headings only — enough to read while story-blog-03 lands the real
- * `next-mdx-remote/rsc` renderer (custom components + shiki), which replaces this module.
+ * Renders `articles.content_mdx` with `next-mdx-remote/rsc` (TECHNICAL-REQUIREMENTS.md §7.2).
+ * Custom components come from the vetted allowlist; fenced code is syntax-highlighted at build
+ * time by shiki (zero runtime JS). No `dangerouslySetInnerHTML` anywhere (§9.3).
  *
- * No `dangerouslySetInnerHTML` — text is rendered as React children (TECHNICAL-REQUIREMENTS §9.3).
+ * Inline-code styling lives on the wrapper via `:not(pre)>code` so it never collides with
+ * shiki's fenced `<pre><code>` output.
  */
 export function ArticleBody({ mdx }: { mdx: string }) {
-  const blocks = mdx.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
   return (
-    <div className="mx-auto max-w-article">
-      {blocks.map((block, i) => {
-        if (block.startsWith("### ")) {
-          return (
-            <h3 key={i} className="mt-8 mb-3 font-heading text-[1.1rem] font-bold text-text">
-              {block.slice(4)}
-            </h3>
-          );
-        }
-        if (block.startsWith("## ")) {
-          return (
-            <h2 key={i} className="mt-12 mb-4 font-heading text-[1.4rem] font-bold tracking-[-0.02em] text-text">
-              {block.slice(3)}
-            </h2>
-          );
-        }
-        return (
-          <p key={i} className="mb-5 font-body text-[0.95rem] leading-[1.7] text-text">
-            {block}
-          </p>
-        );
-      })}
+    <div className="mx-auto max-w-article [&_:not(pre)>code]:rounded [&_:not(pre)>code]:bg-surface-light [&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.88em] [&_pre]:my-6 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:border [&_pre]:border-border [&_pre]:p-5 [&_pre]:text-[0.85rem]">
+      <MDXRemote
+        source={mdx}
+        components={buildMdxComponents(mdx)}
+        options={{
+          mdxOptions: {
+            // High-contrast light theme so syntax tokens clear the WCAG AA contrast gate (§1).
+            rehypePlugins: [[rehypeShiki, { theme: "github-light-high-contrast" }]],
+          },
+        }}
+      />
     </div>
   );
 }

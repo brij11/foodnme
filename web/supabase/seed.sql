@@ -10,11 +10,25 @@ insert into articles (title, slug, excerpt, content_mdx, category, tags, cover_i
  $$How to scope, document, and verify a HACCP plan without a 200-page binder. The shortest path to a defensible system.$$,
  $$## Start with the flow diagram
 
-A HACCP plan that survives an audit starts with an accurate process flow. Walk the line, not the SOP.
+A HACCP plan that survives an audit starts with an accurate process flow. Walk the line, not the SOP. Tag every step you touch, e.g. <Tag variant="green">CCP</Tag> vs <Tag variant="neutral">PRP</Tag>.
+
+<PullQuote>A defensible HACCP plan is short, current, and walked — not a binder nobody reads.</PullQuote>
 
 ## Keep the hazard analysis honest
 
-List only the hazards reasonably likely to occur. Auditors trust a short, defensible analysis more than an exhaustive one nobody maintains.$$,
+List only the hazards reasonably likely to occur. Auditors trust a short, defensible analysis more than an exhaustive one nobody maintains.
+
+### A quick lethality check
+
+```ts
+function f0(tempsC: number[]): number {
+  return tempsC.reduce((acc, t) => acc + 10 ** ((t - 121.1) / 10), 0);
+}
+```
+
+<Image src="https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=1200&q=80&auto=format&fit=crop" alt="Process line walk-through" caption="Walk the line, not the SOP." />
+
+<CTABox title="Grab the dairy HACCP plan template" body="A ready-to-adapt starting point." ctaText="Download template" ctaHref="/templates/haccp-plan-template-dairy" />$$,
  'food-safety', '{HACCP,FSSAI,Compliance}',
  'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=1200&q=80&auto=format&fit=crop', 'Aarti Menon', 9, true, '2026-05-12T09:00:00Z'),
 

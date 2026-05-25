@@ -5,6 +5,9 @@ const LISTING_CACHE = [
 
 const nextConfig = {
   reactStrictMode: true,
+  // SSG of MDX articles runs shiki (first call loads the oniguruma WASM + grammar/theme),
+  // which can exceed the default 60s static-generation budget on a cold build.
+  staticPageGenerationTimeout: 180,
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
