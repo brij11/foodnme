@@ -13,6 +13,15 @@ export async function middleware(request: NextRequest) {
   const { response, user } = await updateSession(request);
   const { pathname } = request.nextUrl;
 
+  // Listing pages are SSR'd per request but CDN-cacheable (TECHNICAL-REQUIREMENTS.md §7).
+  if (
+    pathname === "/blog" ||
+    pathname === "/templates" ||
+    pathname.startsWith("/blog/category/")
+  ) {
+    response.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+  }
+
   const isGated = pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
   if (isGated && !user) {
     const url = request.nextUrl.clone();

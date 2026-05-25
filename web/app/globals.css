@@ -32,7 +32,9 @@
   --color-tag-safe-bg: #eef6ee;
   --color-tag-safe-text: #166534;
   --color-tag-neutral-bg: #f6f5ed;
-  --color-tag-neutral-text: #6b7280;
+  /* Darkened from the theme's #6b7280 (4.42:1 on the neutral bg — fails WCAG AA) to clear
+     the §1 a11y contrast gate; stays in the same neutral-gray family. */
+  --color-tag-neutral-text: #4b5563;
 
   /* Feedback */
   --color-error: #b91c1c;

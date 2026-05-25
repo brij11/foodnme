@@ -71,6 +71,16 @@ const config: Config = {
         content: "1200px",
         article: "720px",
       },
+      keyframes: {
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+      },
+      animation: {
+        // Card-grid stagger entry (UI-DESIGN-HANDOFF.md §4.10); per-child delay set inline.
+        "fade-up": "fade-up 0.4s ease both",
+      },
     },
   },
   plugins: [],

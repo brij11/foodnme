@@ -15,6 +15,11 @@ export type NewsletterBannerProps = {
   subtext?: string;
   /** Compact single-line footer variant (UI-DESIGN-HANDOFF.md §2.2 / §3). */
   mini?: boolean;
+  /**
+   * Whether this banner suppresses the Footer's mini newsletter (avoids two signups on one
+   * page). True for any in-page banner; the Footer's own mini passes false.
+   */
+  suppressesFooterNewsletter?: boolean;
   className?: string;
 };
 
@@ -25,6 +30,7 @@ export function NewsletterBanner({
   headline = "Stay ahead in food technology.",
   subtext = "One short email a week — practical guidance on food safety, QC, and regulatory compliance from working practitioners.",
   mini = false,
+  suppressesFooterNewsletter = true,
   className,
 }: NewsletterBannerProps) {
   const [email, setEmail] = useState("");
@@ -33,11 +39,11 @@ export function NewsletterBanner({
   const [error, setError] = useState<string | null>(null);
   const { registerFullBanner } = useFooterNewsletter();
 
-  // A full (non-mini) banner registers itself so the Footer suppresses its mini variant.
+  // Any in-page banner registers so the Footer hides its own mini (the Footer's mini opts out).
   useEffect(() => {
-    if (mini) return;
+    if (!suppressesFooterNewsletter) return;
     return registerFullBanner();
-  }, [mini, registerFullBanner]);
+  }, [suppressesFooterNewsletter, registerFullBanner]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();

@@ -29,7 +29,7 @@ export function Footer() {
       <div className="mx-auto max-w-content px-6 lg:px-12">
         {!hasFullBanner ? (
           <div className="mb-12 max-w-sm">
-            <NewsletterBanner mini source="footer" />
+            <NewsletterBanner mini source="footer" suppressesFooterNewsletter={false} />
           </div>
         ) : null}
 
