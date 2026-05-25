@@ -99,6 +99,52 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
   return (data as Article | null) ?? null;
 }
 
+/**
+ * Related articles for the article-detail footer (blog-05): same category, most-recent first,
+ * excluding the current article and anything unpublished. If the category yields fewer than
+ * `limit`, top up with the most-recent published articles overall (still excluding the current
+ * one and any already chosen) so the row always shows `limit` cards when enough exist.
+ */
+export async function getRelatedArticles(
+  currentSlug: string,
+  category: string,
+  limit = 3,
+): Promise<ArticleListItem[]> {
+  const supabase = createPublicClient();
+
+  const sameCategory = await supabase
+    .from("articles")
+    .select(LIST_COLUMNS)
+    .eq("is_published", true)
+    .eq("category", category)
+    .neq("slug", currentSlug)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+  if (sameCategory.error) throw new Error(`getRelatedArticles failed: ${sameCategory.error.message}`);
+
+  const chosen = (sameCategory.data as ArticleListItem[] | null) ?? [];
+  if (chosen.length >= limit) return chosen.slice(0, limit);
+
+  // Fall back to most-recent overall, skipping the current article and anything already chosen.
+  const taken = new Set([currentSlug, ...chosen.map((a) => a.slug)]);
+  const fallback = await supabase
+    .from("articles")
+    .select(LIST_COLUMNS)
+    .eq("is_published", true)
+    .neq("slug", currentSlug)
+    .order("published_at", { ascending: false })
+    .limit(limit + chosen.length + 1);
+  if (fallback.error) throw new Error(`getRelatedArticles failed: ${fallback.error.message}`);
+
+  for (const a of (fallback.data as ArticleListItem[] | null) ?? []) {
+    if (chosen.length >= limit) break;
+    if (taken.has(a.slug)) continue;
+    taken.add(a.slug);
+    chosen.push(a);
+  }
+  return chosen.slice(0, limit);
+}
+
 /** All published slugs — for `generateStaticParams`. */
 export async function getPublishedSlugs(): Promise<string[]> {
   const supabase = createPublicClient();

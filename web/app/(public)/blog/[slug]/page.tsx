@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { getArticleBySlug, getPublishedSlugs } from "@/lib/articles";
+import { getArticleBySlug, getPublishedSlugs, getRelatedArticles } from "@/lib/articles";
+import { getResourceBySlug } from "@/lib/resources";
 import { articleCategoryLabel, articleTagVariant } from "@/lib/categories";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { ArticleBody } from "@/components/blog/ArticleBody";
+import { ArticleTemplateCTA } from "@/components/blog/ArticleTemplateCTA";
+import { RelatedArticles } from "@/components/blog/RelatedArticles";
 import { Tag } from "@/components/ui/Tag";
 import { Icon } from "@/components/ui/Icon";
 import { NewsletterBanner } from "@/components/newsletter/NewsletterBanner";
@@ -38,6 +41,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 export default async function ArticlePage({ params }: { params: { slug: string } }) {
   const article = await getArticleBySlug(params.slug);
   if (!article) notFound();
+
+  // In-article CTA target + "You might also like" row (blog-05). The CTA only renders when the
+  // article's related_resource_slug resolves to a real template.
+  const [relatedResource, relatedArticles] = await Promise.all([
+    article.related_resource_slug ? getResourceBySlug(article.related_resource_slug) : Promise.resolve(null),
+    getRelatedArticles(article.slug, article.category, 3),
+  ]);
 
   return (
     <article className="mx-auto max-w-content px-6 py-12 lg:px-12">
@@ -85,6 +95,8 @@ export default async function ArticlePage({ params }: { params: { slug: string }
         <ArticleBody mdx={article.content_mdx} />
       </div>
 
+      <ArticleTemplateCTA resource={relatedResource} />
+
       {article.tags.length > 0 ? (
         <div className="mx-auto mt-10 flex max-w-article flex-wrap gap-2">
           {article.tags.map((t) => (
@@ -94,6 +106,8 @@ export default async function ArticlePage({ params }: { params: { slug: string }
           ))}
         </div>
       ) : null}
+
+      <RelatedArticles articles={relatedArticles} />
 
       <div className="mt-16">
         <NewsletterBanner

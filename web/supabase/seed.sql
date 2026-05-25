@@ -1,8 +1,42 @@
 -- foodnme — dev seed (TECHNICAL-REQUIREMENTS.md §4.3). Ports prototype data.jsx content.
 -- Applied by `supabase db reset`. Sections are added by the stories that need them:
---   • resources  → templates-01
+--   • resources  → blog-05 (first to need it; templates-01/02/03 reuse the same rows)
 --   • articles   → blog-01 (+ MDX sample article → blog-03)
 -- Image URLs stay as Unsplash links for dev per §4.3.
+-- `resources` is seeded before `articles` so `articles.related_resource_slug` FK resolves
+-- (the in-article CTA box in blog-05 links the HACCP article → the dairy HACCP template).
+
+-- ───────────────────────── resources / templates (blog-05) ─────────────────────────
+-- file_type is lowercase 'pdf' | 'docx' (§4.1); file_url is the object key inside the
+-- private `templates` storage bucket — the download API (templates-03) signs it on demand.
+insert into resources (title, slug, description, category, file_url, file_type, is_free, download_count) values
+('HACCP Plan Template — Dairy Processing', 'haccp-plan-template-dairy',
+ 'Complete HACCP plan structure with hazard analysis, CCP determination matrix, and monitoring forms tailored for dairy lines.',
+ 'haccp', 'haccp-plan-template-dairy.docx', 'docx', true, 1840),
+('Supplier Audit Checklist (GFSI-Aligned)', 'supplier-audit-checklist',
+ '200-point audit checklist used by procurement teams to qualify ingredient and packaging suppliers.',
+ 'audit-checklists', 'supplier-audit-checklist.pdf', 'pdf', true, 2310),
+('SOP — CIP Cleaning for Liquid Lines', 'sop-cip-cleaning',
+ 'Step-by-step Cleaning-in-Place SOP with chemical concentrations, temperature ranges, and verification logs.',
+ 'sop-templates', 'sop-cip-cleaning.docx', 'docx', true, 1260),
+('QC Inspection Sheet — Incoming Materials', 'qc-inspection-incoming-materials',
+ 'Lot-level inspection record for raw materials including AQL tables and disposition workflow.',
+ 'qc-inspection', 'qc-inspection-incoming-materials.pdf', 'pdf', true, 980),
+('FSSAI License Renewal Checklist', 'fssai-license-renewal-checklist',
+ 'Annual document review and renewal workflow with timelines, required attachments, and a fee schedule.',
+ 'compliance-docs', 'fssai-license-renewal-checklist.pdf', 'pdf', true, 3120),
+('HACCP Team Charter & Roles Template', 'haccp-team-charter',
+ 'Defines team composition, decision authority, and the cadence of HACCP review meetings.',
+ 'haccp', 'haccp-team-charter.docx', 'docx', true, 720),
+('Annual Internal Audit Plan', 'internal-audit-plan',
+ 'Quarterly audit calendar template with scope, audit type, lead auditor, and finding tracking.',
+ 'audit-checklists', 'internal-audit-plan.docx', 'docx', true, 1490),
+('SOP — Allergen Changeover on Shared Lines', 'sop-allergen-changeover',
+ 'Validated changeover procedure including cleaning verification and first-product disposition rules.',
+ 'sop-templates', 'sop-allergen-changeover.docx', 'docx', true, 1080),
+('Labeling Review Template (FSSAI 2026)', 'labelling-review-template',
+ 'Pre-print label review checklist aligned to current FSSAI labeling regulations and front-of-pack rules.',
+ 'compliance-docs', 'labelling-review-template.pdf', 'pdf', true, 1670);
 
 -- ───────────────────────── articles (blog-01) ─────────────────────────
 insert into articles (title, slug, excerpt, content_mdx, category, tags, cover_image_url, author_name, read_time_mins, is_published, published_at) values
@@ -99,3 +133,10 @@ Rounding rules and serving-size math cause more rejections than any single ingre
 Burn marks and inconsistent expansion usually point back to screw configuration and moisture, not temperature alone.$$,
  'processing', '{Extrusion,Troubleshooting}',
  'https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=1200&q=80&auto=format&fit=crop', 'Devansh Roy', 14, true, '2026-04-02T09:00:00Z');
+
+-- ───────────────────────── article → template links (blog-05) ─────────────────────────
+-- The HACCP rollout article surfaces a structured in-article CTA box for the HACCP team
+-- charter template (a sensible next step). Its in-MDX CTABox already points at the dairy
+-- plan template, so the structured CTA links to a distinct, complementary resource.
+update articles set related_resource_slug = 'haccp-team-charter'
+ where slug = 'haccp-implementation-small-food-businesses';

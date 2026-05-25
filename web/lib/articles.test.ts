@@ -7,6 +7,7 @@ import {
   getCategoryCounts,
   getArticleBySlug,
   getPublishedSlugs,
+  getRelatedArticles,
   clampPage,
   parseSort,
 } from "./articles";
@@ -16,11 +17,18 @@ type ChainResult = { data: unknown; count?: number; error: null };
 
 function chain(result: ChainResult) {
   const obj: Record<string, unknown> = {};
-  for (const m of ["select", "eq", "order", "range", "maybeSingle"]) {
+  for (const m of ["select", "eq", "neq", "order", "range", "limit", "maybeSingle"]) {
     obj[m] = vi.fn(() => obj);
   }
   (obj as { then: unknown }).then = (resolve: (r: ChainResult) => unknown) => resolve(result);
   return obj;
+}
+
+/** A client whose successive `.from()` calls resolve the queued results in order. */
+function clientWithQueue(results: ChainResult[]) {
+  const chains = results.map(chain);
+  let i = 0;
+  return { from: vi.fn(() => chains[i++]) } as never;
 }
 
 describe("clampPage / parseSort", () => {
@@ -94,6 +102,45 @@ describe("getArticleBySlug / getPublishedSlugs (blog-02)", () => {
     const c = chain({ data: [{ slug: "a" }, { slug: "b" }], error: null });
     vi.mocked(createClient).mockReturnValue({ from: () => c } as never);
     expect(await getPublishedSlugs()).toEqual(["a", "b"]);
+  });
+});
+
+describe("getRelatedArticles (blog-05)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("returns same-category articles (newest first), no fallback query when ≥ limit", async () => {
+    const same = [{ slug: "b" }, { slug: "c" }, { slug: "d" }];
+    const client = clientWithQueue([{ data: same, error: null }]);
+    vi.mocked(createClient).mockReturnValue(client);
+
+    const res = await getRelatedArticles("a", "food-safety", 3);
+    expect(res.map((r) => r.slug)).toEqual(["b", "c", "d"]);
+    // only the same-category query ran (no top-up needed)
+    expect((client as unknown as { from: ReturnType<typeof vi.fn> }).from).toHaveBeenCalledTimes(1);
+  });
+
+  it("tops up from most-recent overall when the category yields < limit (dedup + exclude current)", async () => {
+    const same = [{ slug: "b" }]; // 1 in-category match
+    const overall = [{ slug: "a" }, { slug: "b" }, { slug: "x" }, { slug: "y" }]; // current + dup + new
+    const client = clientWithQueue([
+      { data: same, error: null },
+      { data: overall, error: null },
+    ]);
+    vi.mocked(createClient).mockReturnValue(client);
+
+    const res = await getRelatedArticles("a", "food-safety", 3);
+    // keeps "b", skips current "a" and the duplicate "b", fills "x" then "y"
+    expect(res.map((r) => r.slug)).toEqual(["b", "x", "y"]);
+  });
+
+  it("can return fewer than limit when the corpus is too small", async () => {
+    const client = clientWithQueue([
+      { data: [], error: null },
+      { data: [{ slug: "a" }], error: null }, // only the current article exists
+    ]);
+    vi.mocked(createClient).mockReturnValue(client);
+
+    expect(await getRelatedArticles("a", "food-safety", 3)).toEqual([]);
   });
 });
 
