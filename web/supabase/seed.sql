@@ -11,7 +11,13 @@
 -- private `templates` storage bucket — the download API (templates-03) signs it on demand.
 insert into resources (title, slug, description, category, file_url, file_type, is_free, download_count) values
 ('HACCP Plan Template — Dairy Processing', 'haccp-plan-template-dairy',
- 'Complete HACCP plan structure with hazard analysis, CCP determination matrix, and monitoring forms tailored for dairy lines.',
+ 'Complete HACCP plan structure tailored for dairy lines.
+- Hazard identification worksheet
+- Decision tree for CCPs
+- Monitoring procedures (T/RH/pH)
+- Corrective action log
+- Verification & validation records
+- Annual review checklist',
  'haccp', 'haccp-plan-template-dairy.docx', 'docx', true, 1840),
 ('Supplier Audit Checklist (GFSI-Aligned)', 'supplier-audit-checklist',
  '200-point audit checklist used by procurement teams to qualify ingredient and packaging suppliers.',
