@@ -16,7 +16,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "About Us", href: "/about" },
   { label: "Knowledge Hub", href: "/blog" },
   { label: "Templates", href: "/templates" },
-  { label: "Jobs", disabled: true },
+  { label: "Jobs", href: "/jobs" },
   { label: "Experts", href: "/experts" },
   { label: "Services", href: "/services" },
 ];

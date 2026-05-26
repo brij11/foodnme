@@ -219,6 +219,72 @@ export type Database = {
           },
         ]
       }
+      jobs: {
+        Row: {
+          company_name: string
+          created_at: string
+          description: string
+          employer_id: string | null
+          experience_level: string
+          expires_at: string | null
+          id: string
+          job_type: string
+          location: string
+          salary_max: number | null
+          salary_min: number | null
+          skills: string[]
+          status: string
+          title: string
+        }
+        Insert: {
+          company_name: string
+          created_at?: string
+          description?: string
+          employer_id?: string | null
+          experience_level: string
+          expires_at?: string | null
+          id?: string
+          job_type: string
+          location?: string
+          salary_max?: number | null
+          salary_min?: number | null
+          skills?: string[]
+          status?: string
+          title: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          description?: string
+          employer_id?: string | null
+          experience_level?: string
+          expires_at?: string | null
+          id?: string
+          job_type?: string
+          location?: string
+          salary_max?: number | null
+          salary_min?: number | null
+          skills?: string[]
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_employer_id_fkey"
+            columns: ["employer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_employer_id_fkey"
+            columns: ["employer_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletter_subscribers: {
         Row: {
           email: string

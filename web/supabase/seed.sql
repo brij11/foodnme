@@ -184,6 +184,33 @@ insert into experts (full_name, title, location, experience_years, hourly_rate, 
  'Plant operations and turnaround specialist. Helps mid-sized food manufacturers improve OEE and pass audits the first time.',
  'karthik.subramanian@expert.foodnme.test', false, false, 'active');
 
+-- ───────────────────────── jobs (jobs-01) ─────────────────────────
+-- Ported from prototype data.jsx JOBS as status='active' (no employer — board seed). The
+-- rendering-only `remote`/`company_initial`/`posted`/`applications` fields are dropped; the
+-- card derives the company initial from company_name. expires_at set well into the future.
+insert into jobs (title, company_name, location, job_type, salary_min, salary_max, experience_level, description, skills, status, expires_at) values
+('Quality Assurance Manager', 'Amul Foods', 'Anand, Gujarat', 'Full-time', 1200000, 1800000, 'Senior',
+ 'Lead QA across two dairy lines (UHT milk and ice-cream). Own HACCP, GMP, and supplier qualification programs.',
+ '{"HACCP","FSSAI","ISO 22000","Dairy"}', 'active', now() + interval '60 days'),
+('Food Safety Auditor (Third-party)', 'TÜV India', 'Mumbai · Remote OK', 'Full-time', 900000, 1400000, 'Mid-level',
+ 'Conduct on-site audits across FSSC 22000, BRC, and SQF schemes. Heavy travel (40-50%).',
+ '{"Auditing","FSSC 22000","BRC"}', 'active', now() + interval '60 days'),
+('R&D Food Technologist', 'ITC Foods', 'Bengaluru, Karnataka', 'Full-time', 700000, 1100000, 'Mid-level',
+ 'New product development for the snacks and biscuits portfolio. Formulation, sensory, and pilot-scale trials.',
+ '{"NPD","Formulation","Sensory","Snacks"}', 'active', now() + interval '60 days'),
+('Regulatory Affairs Specialist', 'Hindustan Unilever', 'Gurugram, Haryana', 'Full-time', 1000000, 1500000, 'Senior',
+ 'Manage FSSAI submissions and labeling reviews for the nutraceuticals and packaged foods portfolio.',
+ '{"FSSAI","Labeling","Nutraceuticals"}', 'active', now() + interval '60 days'),
+('Production Supervisor — Bakery', 'Britannia Industries', 'Hyderabad, Telangana', 'Full-time', 500000, 750000, 'Mid-level',
+ 'Shift supervision on a high-speed biscuit line. GMP, line efficiency, and SOP adherence.',
+ '{"Production","GMP","Bakery"}', 'active', now() + interval '60 days'),
+('QC Microbiologist', 'Mother Dairy', 'Delhi NCR', 'Full-time', 450000, 650000, 'Entry-level',
+ 'Daily micro testing on incoming milk, in-process, and finished product. Method validation and report-out.',
+ '{"Microbiology","QC","Method Validation"}', 'active', now() + interval '60 days'),
+('Compliance Consultant (Contract)', 'Independent', 'Pan-India · Remote', 'Contract', 80000, 150000, 'Senior',
+ '3-6 month engagements supporting growing F&B brands through FSSAI Tier-2 license upgrades and audits.',
+ '{"FSSAI","Consulting","Audit Prep"}', 'active', now() + interval '60 days');
+
 -- ───────────────────────── founder admin flag (auth-05) ─────────────────────────
 -- Idempotent: promotes the founder's profile to admin once that account exists. No-op on a
 -- fresh reset (no signups yet); the row is created by the on_auth_user_created trigger when the

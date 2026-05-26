@@ -26,13 +26,12 @@ describe("Navbar (homepage-02)", () => {
     }
   });
 
-  it("renders Jobs and Experts disabled and non-link (AC#3)", () => {
+  it("links Jobs and Experts now that their Sprint-2 surfaces exist (AC#3 rollout)", () => {
     renderNav();
-    const jobs = screen.getAllByText("Jobs")[0]!;
-    expect(jobs.tagName).toBe("SPAN");
-    expect(jobs).toHaveAttribute("aria-disabled", "true");
-    expect(jobs.className).toContain("cursor-not-allowed");
-    // Knowledge Hub, by contrast, is a real link
+    // The nav shape never changed; the items went live when /jobs (jobs-01) and /experts
+    // (experts-01) shipped — see the §2.1 rollout note.
+    expect(screen.getAllByText("Jobs")[0]!.closest("a")).toHaveAttribute("href", "/jobs");
+    expect(screen.getAllByText("Experts")[0]!.closest("a")).toHaveAttribute("href", "/experts");
     const hub = screen.getAllByText("Knowledge Hub")[0]!;
     expect(hub.closest("a")).toHaveAttribute("href", "/blog");
   });

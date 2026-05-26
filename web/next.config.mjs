@@ -23,6 +23,8 @@ const nextConfig = {
       { source: "/blog/category/:slug*", headers: LISTING_CACHE },
       { source: "/experts", headers: LISTING_CACHE },
       { source: "/experts/:id", headers: LISTING_CACHE },
+      { source: "/jobs", headers: LISTING_CACHE },
+      { source: "/jobs/:id", headers: LISTING_CACHE },
     ];
   },
 };
