@@ -28,10 +28,21 @@ export default async function JobDetailPage({ params }: { params: { id: string }
     data: { user },
   } = await supabase.auth.getUser();
   let role: "seeker" | "employer" | "expert" | null = null;
+  let alreadyApplied = false;
   if (user) {
     const { data } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
     const r = data?.role;
     role = r === "seeker" || r === "employer" || r === "expert" ? r : null;
+    if (role === "seeker") {
+      // Duplicate-apply guard (story-jobs-05): own application row via RLS self-read.
+      const { data: existing } = await supabase
+        .from("applications")
+        .select("id")
+        .eq("job_id", job.id)
+        .eq("applicant_id", user.id)
+        .maybeSingle();
+      alreadyApplied = !!existing;
+    }
   }
 
   return (
@@ -74,7 +85,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
           </div>
           <p className="mt-1 font-body text-[0.78rem] text-muted">per year</p>
           <div className="mt-5">
-            <ApplyButton jobId={job.id} jobTitle={job.title} role={role} />
+            <ApplyButton jobId={job.id} jobTitle={job.title} role={role} alreadyApplied={alreadyApplied} />
           </div>
         </aside>
       </div>
