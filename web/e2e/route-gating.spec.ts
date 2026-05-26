@@ -45,11 +45,13 @@ test.describe("middleware route gating (story-auth-06)", () => {
     expect(new URL(page.url()).pathname).toBe("/dashboard/seeker");
   });
 
-  test("non-admin seeker on /admin → /dashboard", async ({ page }) => {
+  test("non-admin seeker on /admin → bounced to own dashboard", async ({ page }) => {
     await signInViaUI(page, SEEKER, PW);
     await page.goto("/admin");
-    await page.waitForURL("**/dashboard");
-    expect(new URL(page.url()).pathname).toBe("/dashboard");
+    // Middleware sends non-admins to /dashboard, which the role-router (story-auth-07) then
+    // forwards to the seeker's own dashboard.
+    await page.waitForURL("**/dashboard/seeker");
+    expect(new URL(page.url()).pathname).toBe("/dashboard/seeker");
   });
 
   test("admin on /admin passes through (no redirect)", async ({ page }) => {
