@@ -9,6 +9,9 @@ export type EmailMessage = {
   subject: string;
   html: string;
   text?: string;
+  /** Reply-To address (e.g. the visitor's email on an expert-inquiry relay, story-experts-03). */
+  replyTo?: string;
+  replyToName?: string;
 };
 
 export type SendResult = { sent: boolean; skipped?: boolean };
@@ -40,6 +43,9 @@ export async function sendEmail(msg: EmailMessage): Promise<SendResult> {
       body: JSON.stringify({
         from: { address: fromEmail, name: fromName },
         to: [{ email_address: { address: msg.to, name: msg.toName ?? msg.to } }],
+        ...(msg.replyTo
+          ? { reply_to: [{ address: msg.replyTo, name: msg.replyToName ?? msg.replyTo }] }
+          : {}),
         subject: msg.subject,
         htmlbody: msg.html,
         ...(msg.text ? { textbody: msg.text } : {}),
