@@ -67,12 +67,6 @@ test.describe("/services page (services-01)", () => {
 
   test("services page has no critical/serious a11y violations (§10)", async ({ page }) => {
     await page.goto("/services");
-    // The static page paints instantly; wait for the grid's fade-up stagger (≤0.4s anim +
-    // 5×80ms delay) to settle to full opacity so axe scans the settled DOM, not a mid-fade frame.
-    await page.waitForFunction(() => {
-      const cards = document.querySelectorAll(".animate-fade-up");
-      return cards.length > 0 && [...cards].every((c) => getComputedStyle(c).opacity === "1");
-    });
-    await expectNoSeriousA11yViolations(page);
+    await expectNoSeriousA11yViolations(page); // helper waits for the fade-up stagger to settle
   });
 });
