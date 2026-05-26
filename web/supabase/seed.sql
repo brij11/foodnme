@@ -146,3 +146,9 @@ Burn marks and inconsistent expansion usually point back to screw configuration 
 -- plan template, so the structured CTA links to a distinct, complementary resource.
 update articles set related_resource_slug = 'haccp-team-charter'
  where slug = 'haccp-implementation-small-food-businesses';
+
+-- ───────────────────────── founder admin flag (auth-05) ─────────────────────────
+-- Idempotent: promotes the founder's profile to admin once that account exists. No-op on a
+-- fresh reset (no signups yet); the row is created by the on_auth_user_created trigger when the
+-- founder registers. Second-admin onboarding is out of scope (Appendix OQ#8).
+update profiles set is_admin = true where email = 'founder@foodnme.test';

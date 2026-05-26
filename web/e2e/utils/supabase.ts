@@ -32,6 +32,23 @@ export function adminClient(): SupabaseClient {
   );
 }
 
+/** Anonymous (RLS-bound) client — the public/visitor surface. */
+export function anonClient(): SupabaseClient {
+  loadLocalEnv();
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  );
+}
+
+/** Promotes an existing user's profile to admin (is_admin is DB-only, not signup metadata). */
+export async function setAdmin(email: string): Promise<void> {
+  const admin = adminClient();
+  const { error } = await admin.from("profiles").update({ is_admin: true }).eq("email", email);
+  if (error) throw error;
+}
+
 export type TestRole = "seeker" | "employer" | "expert";
 
 /**
