@@ -77,6 +77,37 @@ export async function listExperts(filters: ExpertFilters = {}): Promise<ExpertCa
   return (data as ExpertCardData[] | null) ?? [];
 }
 
+/** Full expert profile for the detail page — still WITHOUT `contact_email` (anti-harvesting). */
+export type ExpertDetail = ExpertCardData & {
+  bio: string;
+  experience_years: number;
+  certifications: string[];
+};
+
+const DETAIL_COLUMNS =
+  "id, full_name, title, avatar_url, specializations, bio, experience_years, hourly_rate, certifications, location, is_available, is_featured";
+
+/**
+ * A single active expert by id for `/experts/[id]` (story-experts-02), or null if missing /
+ * not active. `contact_email` is never selected — it is reached only server-side by the
+ * contact relay (story-experts-03).
+ */
+export async function getExpertById(id: string): Promise<ExpertDetail | null> {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("experts")
+    .select(DETAIL_COLUMNS)
+    .eq("id", id)
+    .eq("status", "active")
+    .maybeSingle();
+  if (error) {
+    // An invalid uuid syntax surfaces as a query error → treat as not found, don't 500.
+    if (error.code === "22P02") return null;
+    throw new Error(`getExpertById failed: ${error.message}`);
+  }
+  return (data as ExpertDetail | null) ?? null;
+}
+
 /** 2-letter initials fallback when an expert has no avatar (CLAUDE.md rendering rule). */
 export function expertInitials(fullName: string): string {
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
