@@ -4,6 +4,7 @@ import { DashboardShell, DashboardHeader, type DashboardTab } from "./DashboardS
 import { EmptyState } from "@/components/listing/EmptyState";
 import { Alert } from "@/components/ui/Alert";
 import { ExpertProfileForm, type ExpertProfileInitial } from "./ExpertProfileForm";
+import { AvailabilityToggle } from "./AvailabilityToggle";
 
 export type ExpertRow = {
   id: string;
@@ -134,17 +135,22 @@ export function ExpertDashboard({
       id: "availability",
       label: "Availability",
       icon: "settings",
-      render: () => (
-        <EmptyState
-          title="Availability"
-          message={
-            expert
-              ? "Toggle whether you're open to new engagements. The control arrives next."
-              : "Create your profile first — then you can toggle availability here."
-          }
-          action={{ label: "View the experts directory", href: "/experts" }}
-        />
-      ),
+      render: () =>
+        expert ? (
+          <>
+            <DashboardHeader
+              title="Availability"
+              subtitle="Toggle whether you're open to new engagements. Updates the directory immediately."
+            />
+            <AvailabilityToggle expertId={expert.id} initial={expert.is_available} />
+          </>
+        ) : (
+          <EmptyState
+            title="Availability"
+            message="Create your profile first — then you can toggle availability here."
+            action={{ label: "View the experts directory", href: "/experts" }}
+          />
+        ),
     },
     {
       id: "inquiries",
