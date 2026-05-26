@@ -56,6 +56,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     certifications: parsed.data.certifications,
     location: parsed.data.location,
     contact_email: parsed.data.contact_email,
+    ...(parsed.data.avatar_url !== undefined ? { avatar_url: parsed.data.avatar_url } : {}),
     ...(material ? { status: "pending" as const } : {}),
   };
 

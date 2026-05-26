@@ -21,6 +21,8 @@ export const expertProfileSchema = z.object({
   certifications: z.array(z.string().trim().min(1)).max(20),
   location: z.string().trim().min(1, "Where are you based?"),
   contact_email: z.string().trim().toLowerCase().email("Enter a valid contact email."),
+  // Set by the avatar uploader (story-experts-05); not a material field.
+  avatar_url: z.string().url().nullable().optional(),
 });
 
 export type ExpertProfileInput = z.infer<typeof expertProfileSchema>;

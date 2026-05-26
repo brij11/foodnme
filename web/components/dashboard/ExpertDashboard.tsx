@@ -16,6 +16,7 @@ export type ExpertRow = {
   certifications: string[];
   location: string;
   contact_email: string;
+  avatar_url: string | null;
   status: string;
   is_available: boolean;
 };
@@ -44,6 +45,7 @@ export function ExpertDashboard({
         certifications: expert.certifications,
         location: expert.location,
         contact_email: expert.contact_email,
+        avatar_url: expert.avatar_url,
       }
     : {
         id: null,
@@ -56,6 +58,7 @@ export function ExpertDashboard({
         certifications: [],
         location: "",
         contact_email: profileDefaults.email,
+        avatar_url: null,
       };
 
   const pendingBanner = isPending ? (

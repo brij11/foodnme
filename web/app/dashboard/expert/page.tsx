@@ -21,7 +21,7 @@ export default async function ExpertDashboardPage() {
   const { data: expert } = await supabase
     .from("experts")
     .select(
-      "id, full_name, title, bio, specializations, experience_years, hourly_rate, certifications, location, contact_email, status, is_available",
+      "id, full_name, title, bio, specializations, experience_years, hourly_rate, certifications, location, contact_email, avatar_url, status, is_available",
     )
     .eq("user_id", user.id)
     .maybeSingle();

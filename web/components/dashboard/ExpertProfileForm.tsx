@@ -8,6 +8,7 @@ import { Alert } from "@/components/ui/Alert";
 import { SPECIALIZATIONS } from "@/lib/experts";
 import { expertProfileSchema } from "@/lib/schemas/expert-profile";
 import { cn } from "@/lib/utils/cn";
+import { AvatarUpload } from "./AvatarUpload";
 
 export type ExpertProfileInitial = {
   id: string | null;
@@ -20,6 +21,7 @@ export type ExpertProfileInitial = {
   certifications: string[];
   location: string;
   contact_email: string;
+  avatar_url: string | null;
 };
 
 type FieldKey =
@@ -53,6 +55,7 @@ export function ExpertProfileForm({ initial }: { initial: ExpertProfileInitial }
   const [bio, setBio] = useState(initial.bio);
   const [specs, setSpecs] = useState<string[]>(initial.specializations);
   const [certsText, setCertsText] = useState(initial.certifications.join(", "));
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(initial.avatar_url);
 
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
@@ -84,6 +87,7 @@ export function ExpertProfileForm({ initial }: { initial: ExpertProfileInitial }
         .filter(Boolean),
       location,
       contact_email: contactEmail,
+      avatar_url: avatarUrl,
     };
 
     const parsed = expertProfileSchema.safeParse(payload);
@@ -131,6 +135,8 @@ export function ExpertProfileForm({ initial }: { initial: ExpertProfileInitial }
         </Alert>
       ) : null}
       {formError ? <Alert tone="error">{formError}</Alert> : null}
+
+      <AvatarUpload fullName={fullName} value={avatarUrl} onChange={setAvatarUrl} />
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Input label="Display name" name="full_name" value={fullName} onChange={(e) => setFullName(e.target.value)} error={errors.full_name} />
