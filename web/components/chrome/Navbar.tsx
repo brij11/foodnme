@@ -17,7 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Knowledge Hub", href: "/blog" },
   { label: "Templates", href: "/templates" },
   { label: "Jobs", disabled: true },
-  { label: "Experts", disabled: true },
+  { label: "Experts", href: "/experts" },
   { label: "Services", href: "/services" },
 ];
 

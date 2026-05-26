@@ -96,6 +96,81 @@ export type Database = {
           },
         ]
       }
+      experts: {
+        Row: {
+          avatar_url: string | null
+          bio: string
+          certifications: string[]
+          contact_email: string
+          created_at: string
+          experience_years: number
+          full_name: string
+          hourly_rate: number | null
+          id: string
+          is_available: boolean
+          is_featured: boolean
+          location: string
+          search_vector: unknown
+          specializations: string[]
+          status: string
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string
+          certifications?: string[]
+          contact_email: string
+          created_at?: string
+          experience_years?: number
+          full_name: string
+          hourly_rate?: number | null
+          id?: string
+          is_available?: boolean
+          is_featured?: boolean
+          location?: string
+          search_vector?: unknown
+          specializations?: string[]
+          status?: string
+          title?: string
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string
+          certifications?: string[]
+          contact_email?: string
+          created_at?: string
+          experience_years?: number
+          full_name?: string
+          hourly_rate?: number | null
+          id?: string
+          is_available?: boolean
+          is_featured?: boolean
+          location?: string
+          search_vector?: unknown
+          specializations?: string[]
+          status?: string
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "experts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "experts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletter_subscribers: {
         Row: {
           email: string
@@ -250,6 +325,14 @@ export type Database = {
       }
     }
     Functions: {
+      experts_search_doc: {
+        Args: {
+          p_full_name: string
+          p_specializations: string[]
+          p_title: string
+        }
+        Returns: unknown
+      }
       increment_template_download: {
         Args: { p_template_id: string }
         Returns: {

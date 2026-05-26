@@ -21,6 +21,7 @@ const nextConfig = {
       { source: "/blog", headers: LISTING_CACHE },
       { source: "/templates", headers: LISTING_CACHE },
       { source: "/blog/category/:slug*", headers: LISTING_CACHE },
+      { source: "/experts", headers: LISTING_CACHE },
     ];
   },
 };

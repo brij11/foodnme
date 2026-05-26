@@ -147,6 +147,43 @@ Burn marks and inconsistent expansion usually point back to screw configuration 
 update articles set related_resource_slug = 'haccp-team-charter'
  where slug = 'haccp-implementation-small-food-businesses';
 
+-- ───────────────────────── experts (experts-01) ─────────────────────────
+-- Ported from prototype data.jsx EXPERTS as status='active' (no linked user — directory seed).
+-- `rate` strings (₹6,000/hr) become integer hourly_rate; rating/reviews dropped (no schema).
+insert into experts (full_name, title, location, experience_years, hourly_rate, specializations, certifications, bio, contact_email, is_available, is_featured, status) values
+('Dr. Aarti Menon', 'FSSAI Lead Auditor', 'Mumbai · India', 12, 6000,
+ '{"Food Safety","HACCP","Auditing"}', '{"FSSAI Auditor","FSSC 22000 Lead Auditor","PhD Food Tech"}',
+ 'Twelve years auditing and implementing food safety systems for Indian food businesses. Trainer at NIFTEM workshops.',
+ 'aarti.menon@expert.foodnme.test', true, true, 'active'),
+('Vikram Shah', 'Regulatory Affairs Consultant', 'Delhi NCR · India', 9, 4500,
+ '{"Regulatory Compliance","Labeling","Nutraceuticals"}', '{"MSc Food Tech","FSSAI Trainer"}',
+ 'Specializes in FSSAI licensing, nutraceutical compliance, and labeling reviews across India.',
+ 'vikram.shah@expert.foodnme.test', true, false, 'active'),
+('Priya Iyer', 'QC Manager · Dairy', 'Anand, Gujarat', 14, 5500,
+ '{"Quality Control","Dairy","Sensory Analysis"}', '{"BSc + MSc Food Tech","Six Sigma Black Belt"}',
+ 'Quality Control lead with deep experience in dairy. Shelf-life testing, sampling plans, and incoming-material inspection.',
+ 'priya.iyer@expert.foodnme.test', false, false, 'active'),
+('Devansh Roy', 'Process Engineer', 'Pune, Maharashtra', 8, 4800,
+ '{"Process Engineering","Product Development","Snacks"}', '{"BTech Food Engineering","Extrusion Specialist"}',
+ 'Process engineer with 8 years on extrusion, thermal, and aseptic lines. Helps food businesses scale up without sacrificing margins.',
+ 'devansh.roy@expert.foodnme.test', true, false, 'active'),
+('Naina Kapoor', 'Industry Analyst & Strategy', 'Bengaluru · India', 6, 3800,
+ '{"Strategy","Market Research","Nutraceuticals"}', '{"MBA · IIM","Food Tech Researcher"}',
+ 'Covers Indian food-tech investment, market structure, and category trends. Previously at a leading consumer-sector research firm.',
+ 'naina.kapoor@expert.foodnme.test', true, false, 'active'),
+('Rohan Pillai', 'Sensory Scientist', 'Chennai, Tamil Nadu', 10, 5000,
+ '{"Sensory Analysis","Product Development","Beverages"}', '{"MSc Food Tech","Certified Sensory Panel Leader"}',
+ 'Sensory scientist working with beverage and savory brands. Panel design, descriptive analysis, and consumer testing.',
+ 'rohan.pillai@expert.foodnme.test', true, false, 'active'),
+('Meera Banerjee', 'Nutrition & Labeling Consultant', 'Kolkata · West Bengal', 11, 4200,
+ '{"Labeling","Nutraceuticals","Regulatory Compliance"}', '{"MSc Nutrition","FSSAI Trainer"}',
+ 'Nutrition and labeling expert. Pre-print label reviews, claim substantiation, and front-of-pack compliance.',
+ 'meera.banerjee@expert.foodnme.test', true, true, 'active'),
+('Karthik Subramanian', 'Plant Operations Consultant', 'Hyderabad · India', 15, 6500,
+ '{"Process Engineering","Bakery","Auditing"}', '{"BTech + MTech","GFSI Trained"}',
+ 'Plant operations and turnaround specialist. Helps mid-sized food manufacturers improve OEE and pass audits the first time.',
+ 'karthik.subramanian@expert.foodnme.test', false, false, 'active');
+
 -- ───────────────────────── founder admin flag (auth-05) ─────────────────────────
 -- Idempotent: promotes the founder's profile to admin once that account exists. No-op on a
 -- fresh reset (no signups yet); the row is created by the on_auth_user_created trigger when the
