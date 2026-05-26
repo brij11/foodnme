@@ -3,6 +3,7 @@ import { SERVICES } from "@/lib/services";
 import { ServiceCard } from "@/components/services/ServiceCard";
 import { Credibility } from "@/components/services/Credibility";
 import { HowItWorks } from "@/components/services/HowItWorks";
+import { InquiryForm } from "@/components/services/InquiryForm";
 
 export const metadata: Metadata = {
   title: "Food Technology Consulting — foodnme",
@@ -85,16 +86,17 @@ export default function ServicesPage() {
         <HowItWorks />
       </section>
 
-      {/* Inquiry — the form lands in services-02; this anchor is the hero CTA's scroll target. */}
+      {/* Inquiry form (services-02) — the hero CTA's scroll target. */}
       <section id="inquiry" className="mx-auto max-w-content px-6 pb-24 lg:px-12">
         <div className="mx-auto max-w-[820px] rounded-xl border border-border bg-white p-8 sm:p-12">
           <Overline>Start a conversation</Overline>
           <h2 className="mt-3 font-display text-[1.8rem] font-semibold tracking-[-0.02em] text-text">
             Tell us about your food business.
           </h2>
-          <p className="mt-3 font-body text-[1.02rem] leading-relaxed text-muted">
+          <p className="mb-8 mt-3 font-body text-[1.02rem] leading-relaxed text-muted">
             We respond within 24 hours. The first scoping call is on us — no commitment, no pitch.
           </p>
+          <InquiryForm />
         </div>
       </section>
     </div>
