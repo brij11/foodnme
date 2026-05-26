@@ -80,6 +80,42 @@ describe("POST /api/inquiry", () => {
     expect(sb.insert).toHaveBeenCalledWith(expect.objectContaining({ source: "consultation_modal" }));
   });
 
+  it("consultation modal: slim payload inserts with forced service + empty company (services-04)", async () => {
+    vi.mocked(verifyTurnstile).mockResolvedValue(true);
+    const sb = makeSupabase();
+    vi.mocked(createServiceClient).mockReturnValue(sb.client as never);
+
+    const res = await POST(
+      req({
+        full_name: "Ravi Kumar",
+        email: "ravi@snacks.in",
+        message: "Need help scoping a HACCP rollout for a new snack line.",
+        turnstile_token: "tok",
+        source: "consultation_modal",
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(sb.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        full_name: "Ravi Kumar",
+        company_name: "",
+        service_needed: "Consultation (from modal)",
+        source: "consultation_modal",
+      }),
+    );
+  });
+
+  it("consultation modal: short message → 400 (shared schema's min 20 still applies)", async () => {
+    const sb = makeSupabase();
+    vi.mocked(createServiceClient).mockReturnValue(sb.client as never);
+
+    const res = await POST(
+      req({ full_name: "Ravi", email: "ravi@snacks.in", message: "hi", turnstile_token: "t", source: "consultation_modal" }),
+    );
+    expect(res.status).toBe(400);
+    expect(sb.insert).not.toHaveBeenCalled();
+  });
+
   it("invalid body → 400 invalid_body, no Turnstile / DB (AC#1)", async () => {
     const sb = makeSupabase();
     vi.mocked(createServiceClient).mockReturnValue(sb.client as never);

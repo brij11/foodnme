@@ -22,3 +22,20 @@ export type InquiryInput = z.infer<typeof inquirySchema>;
 
 /** The user-editable fields (everything the form collects except the Turnstile token). */
 export const INQUIRY_FIELDS = ["full_name", "email", "company_name", "service_needed", "message"] as const;
+
+/**
+ * Slim consultation-modal body (services-04) — reuses the shared schema's field rules (incl.
+ * `message` min 20) via `.pick()`. The modal collects only name/email/message; the API fills
+ * `service_needed = 'Consultation (from modal)'` and `company_name = ''` for the stored row.
+ */
+export const consultationSchema = inquirySchema.pick({
+  full_name: true,
+  email: true,
+  message: true,
+  turnstile_token: true,
+});
+
+export type ConsultationInput = z.infer<typeof consultationSchema>;
+
+/** The literal stored in `service_needed` for inquiries that originate in the modal. */
+export const CONSULTATION_SERVICE = "Consultation (from modal)";

@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { inquirySchema } from "@/lib/schemas/inquiry";
+import { inquirySchema, consultationSchema, CONSULTATION_SERVICE } from "@/lib/schemas/inquiry";
 import { serviceName } from "@/lib/services";
 import { createServiceClient } from "@/lib/supabase/service";
 import { verifyTurnstile } from "@/lib/turnstile";
@@ -21,11 +21,33 @@ const KNOWN_SOURCES = new Set(["services_page", "consultation_modal"]);
  */
 export async function POST(request: NextRequest) {
   const json = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-  const parsed = inquirySchema.safeParse(json);
-  if (!parsed.success) {
-    return err("invalid_body", "Invalid request.", 400, fieldErrors(parsed.error.flatten().fieldErrors));
+  const rawSource = typeof json?.source === "string" ? json.source : "";
+  const isModal = rawSource === "consultation_modal";
+
+  // The full services-page form validates strictly (enum service + company); the slim modal
+  // (services-04) reuses the picked schema and the API supplies service_needed/company_name.
+  let full_name: string;
+  let email: string;
+  let company_name: string;
+  let service_needed: string;
+  let message: string;
+  let turnstile_token: string;
+
+  if (isModal) {
+    const parsed = consultationSchema.safeParse(json);
+    if (!parsed.success) {
+      return err("invalid_body", "Invalid request.", 400, fieldErrors(parsed.error.flatten().fieldErrors));
+    }
+    ({ full_name, email, message, turnstile_token } = parsed.data);
+    company_name = "";
+    service_needed = CONSULTATION_SERVICE;
+  } else {
+    const parsed = inquirySchema.safeParse(json);
+    if (!parsed.success) {
+      return err("invalid_body", "Invalid request.", 400, fieldErrors(parsed.error.flatten().fieldErrors));
+    }
+    ({ full_name, email, company_name, service_needed, message, turnstile_token } = parsed.data);
   }
-  const { full_name, email, company_name, service_needed, message, turnstile_token } = parsed.data;
 
   // §9.6 — verify the human-check before touching the DB.
   const passed = await verifyTurnstile(turnstile_token, request.headers.get("x-forwarded-for") ?? undefined);
@@ -39,7 +61,6 @@ export async function POST(request: NextRequest) {
   const cached = await getCachedResponse<{ ok: true }>(idemKey);
   if (cached) return ok();
 
-  const rawSource = typeof json?.source === "string" ? json.source : "";
   const source = KNOWN_SOURCES.has(rawSource) ? rawSource : "services_page";
 
   const supabase = createServiceClient();
