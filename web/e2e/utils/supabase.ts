@@ -35,13 +35,16 @@ export function adminClient(): SupabaseClient {
 export type TestRole = "seeker" | "employer" | "expert";
 
 /**
- * Creates (or recreates) a confirmed user with a known password. Deletes any existing user
- * with the same email first so repeated runs stay deterministic. Returns the user id.
+ * Creates (or recreates) a user with a known password. Confirmed by default; pass
+ * `{ confirm: false }` to leave the email unverified (exercises the `email_not_confirmed`
+ * login gate, story-auth-03). Deletes any existing user with the same email first so repeated
+ * runs stay deterministic. Returns the user id.
  */
 export async function ensureUser(
   email: string,
   password: string,
   meta: { full_name: string; role: TestRole },
+  opts: { confirm?: boolean } = {},
 ): Promise<string> {
   const admin = adminClient();
 
@@ -53,7 +56,7 @@ export async function ensureUser(
   const created = await admin.auth.admin.createUser({
     email,
     password,
-    email_confirm: true,
+    email_confirm: opts.confirm ?? true,
     user_metadata: meta,
   });
   if (created.error) throw created.error;

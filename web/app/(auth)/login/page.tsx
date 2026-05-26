@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -24,8 +24,18 @@ function LoginForm() {
   // The email_not_confirmed case is the one exception to the generic-error rule
   // (story-auth-01 AC#4) — surface a verify prompt + resend instead.
   const [unverified, setUnverified] = useState(false);
-  const [resent, setResent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Resend cooldown mirrors Supabase's send window with a 30s button disable (story-auth-03 AC#5).
+  const [cooldown, setCooldown] = useState(0);
+
+  // An expired/used verification link bounces back here (story-auth-03 AC#3).
+  const verificationFailed = params.get("error") === "verification_failed";
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -69,9 +79,10 @@ function LoginForm() {
   }
 
   async function resendVerification() {
+    if (cooldown > 0) return;
     const supabase = createClient();
     await supabase.auth.resend({ type: "signup", email });
-    setResent(true);
+    setCooldown(30);
   }
 
   return (
@@ -88,6 +99,12 @@ function LoginForm() {
       </p>
 
       <form onSubmit={onSubmit} noValidate className="mt-7 flex flex-col gap-5">
+        {verificationFailed && !unverified ? (
+          <Alert tone="warning">
+            That verification link is invalid or has expired. Sign in to request a new one.
+          </Alert>
+        ) : null}
+
         {formError ? <Alert tone="error">{formError}</Alert> : null}
 
         {unverified ? (
@@ -96,10 +113,10 @@ function LoginForm() {
             <button
               type="button"
               onClick={resendVerification}
-              disabled={resent}
+              disabled={cooldown > 0}
               className="font-semibold underline underline-offset-2 disabled:no-underline disabled:opacity-70"
             >
-              {resent ? "verification email sent" : "resend the link"}
+              {cooldown > 0 ? `resend in ${cooldown}s` : "resend the link"}
             </button>
             .
           </Alert>
