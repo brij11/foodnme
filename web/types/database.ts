@@ -82,6 +82,58 @@ export type Database = {
           },
         ]
       }
+      applications: {
+        Row: {
+          applicant_id: string
+          applied_at: string
+          cover_note: string
+          id: string
+          job_id: string
+          resume_url: string | null
+          status: string
+        }
+        Insert: {
+          applicant_id: string
+          applied_at?: string
+          cover_note?: string
+          id?: string
+          job_id: string
+          resume_url?: string | null
+          status?: string
+        }
+        Update: {
+          applicant_id?: string
+          applied_at?: string
+          cover_note?: string
+          id?: string
+          job_id?: string
+          resume_url?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_applicant_id_fkey"
+            columns: ["applicant_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_applicant_id_fkey"
+            columns: ["applicant_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       articles: {
         Row: {
           author_name: string
