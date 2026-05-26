@@ -1,39 +1,70 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { safeRedirect } from "@/lib/utils/redirect";
+
+const ROLES = ["seeker", "employer", "expert"] as const;
+type Role = (typeof ROLES)[number];
 
 /**
- * Route gating (TECHNICAL-REQUIREMENTS.md §5.4).
- *   /admin/*      → require profiles.is_admin (enforced in-route; here we require auth)
- *   /dashboard/*  → require an authenticated user
- *   everything else → public, cookies refreshed only
+ * Route gating (TECHNICAL-REQUIREMENTS.md §5.4, story-auth-06).
+ *   /dashboard/*          → require an authenticated user, else 302 /login?redirect=<path>
+ *   /dashboard/<role>/*   → require profiles.role === <role>, else 302 to the user's dashboard
+ *   /admin/*              → require profiles.is_admin, else 302 /dashboard
  *
- * Role-specific redirects (/dashboard/seeker etc.) land with their Sprint-2 surfaces.
+ * The matcher is scoped to the gated trees only, so public routes never pay a Supabase
+ * round-trip (the token refresh in `updateSession` therefore runs on gated visits, satisfying
+ * the refresh-rotation requirement). Listing-page CDN cache headers live in `next.config.mjs`.
  */
 export async function middleware(request: NextRequest) {
-  const { response, user } = await updateSession(request);
+  const { response, user, supabase } = await updateSession(request);
   const { pathname } = request.nextUrl;
 
-  // Listing pages are SSR'd per request but CDN-cacheable (TECHNICAL-REQUIREMENTS.md §7).
-  if (
-    pathname === "/blog" ||
-    pathname === "/templates" ||
-    pathname.startsWith("/blog/category/")
-  ) {
-    response.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
-  }
-
-  const isGated = pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
-  if (isGated && !user) {
+  // Unauthenticated → login, preserving an internal redirect-back target.
+  if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("redirect", pathname);
+    url.search = "";
+    url.searchParams.set("redirect", safeRedirect(pathname, "/dashboard"));
     return NextResponse.redirect(url);
+  }
+
+  // Role from the JWT projection (cheap); fall back to a profiles query only if absent.
+  let role = (user.user_metadata?.role as string | undefined) ?? undefined;
+
+  // /admin/* → must be an admin (is_admin is DB-only, never in the JWT).
+  if (pathname.startsWith("/admin")) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (!data?.is_admin) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+    return response;
+  }
+
+  // /dashboard/<role>/* → must match the user's own role.
+  const target = ROLES.find((r) => pathname.startsWith(`/dashboard/${r}`));
+  if (target) {
+    if (!role) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+      role = (data?.role as Role | undefined) ?? undefined;
+    }
+    if (role !== target) {
+      return NextResponse.redirect(
+        new URL(role ? `/dashboard/${role}` : "/dashboard", request.url),
+      );
+    }
   }
 
   return response;
 }
 
 export const config = {
-  // Skip Next internals and static assets.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: ["/dashboard/:path*", "/admin/:path*"],
 };

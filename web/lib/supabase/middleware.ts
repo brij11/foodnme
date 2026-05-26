@@ -33,5 +33,7 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  return { response, user };
+  // Returns the cookie-synced client too so `middleware.ts` can run its (gating-only) role/admin
+  // lookups against the same session — keeping business logic out of this factory (§5.3).
+  return { response, user, supabase };
 }

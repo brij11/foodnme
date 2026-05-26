@@ -65,7 +65,10 @@ create or replace function public.protect_profile_privileges()
   set search_path = ''
 as $$
 begin
-  if not public.is_admin(auth.uid()) then
+  -- Only restrict authenticated end-users (auth.uid() present). The service-role/superuser
+  -- context (auth.uid() IS NULL — admin API routes, seed) is trusted and may set these freely,
+  -- e.g. promoting the founder to is_admin.
+  if auth.uid() is not null and not public.is_admin(auth.uid()) then
     new.is_admin := old.is_admin;
     new.role := old.role;
     new.email := old.email;
