@@ -34,11 +34,14 @@ At invocation, determine the mode:
 | Subcommand `add` given | **add** |
 | Subcommand `split <story-id>` given | **split** |
 | Subcommand `update <story-id>` given | **update** |
+| Subcommand `restore <story-id>` given | **restore** |
 | Subcommand `lint` given | **lint** |
 | Subcommand `index` given | **index** |
 | No subcommand, `stories/` exists | Ask the user which mode via `AskUserQuestion` |
 
 If `stories/` exists but contains only `.gitkeep` or is empty, treat it as init.
+
+When the no-subcommand `AskUserQuestion` menu is shown and a `stories/_backlog/` folder with deferred stories exists, include a **"restore — bring a deferred story back into a sprint"** option alongside add / split / update / lint / index.
 
 ## Per-story file format
 
@@ -60,7 +63,7 @@ id: story-<topic>-<NN>            # must match the filename's prefix
 topic: <topic>                    # one of the topics in the topic→sprint table
 sprint: <1|2|3>                   # release grouping; see topic→sprint table
 story_points: <1-5>               # never > 5 — split if larger
-status: <draft|ready|in-progress|done|blocked>
+status: <draft|ready|in-progress|done|blocked|deferred>
 owner: <name-or-handle>           # required; single team member responsible for execute + test
 tasks_populated: <true|false>     # set true only by downstream task-breakdown step
 dependencies:                     # list of story IDs; empty list = no deps
@@ -69,6 +72,8 @@ design:                           # see "Design linkage" below
   - design/<file>.html
 ---
 ```
+
+**`deferred` status & `original_sprint`.** `deferred` and the optional `original_sprint: <N>` field both originate in `/analyze-sprint`: when it can't fully analyze a story it parks the file in `stories/_backlog/`, sets `status: deferred`, and records `original_sprint:` to preserve the planned home (leaving `sprint:` unchanged). `manage-stories` recognizes both because it owns the format — the **restore flow** is the only flow here that reads them, and it clears `original_sprint` when it returns a story to an active sprint. No flow here ever *sets* `status: deferred`.
 
 ### Body sections, in this order
 
@@ -272,6 +277,22 @@ If either fails, the skill prints the failing tasks (or the `tasks_populated: fa
 
 After any field change, regenerate `INDEX.md`.
 
+## Restore flow
+
+Triggered by `restore <story-id>`. Brings a **deferred** story back from `stories/_backlog/` into an upcoming sprint. This flow **reshapes and re-slots only** — it never breaks the story into tasks (that stays `/analyze-sprint`'s job).
+
+1. **Locate** the story in `stories/_backlog/` by ID. If it isn't there, or its `status` is not `deferred`, print why and stop (for a non-deferred story, suggest `update`/`split` instead).
+2. **Show the deferral context** — the `## Notes` deferral paragraph and the recorded `original_sprint`, so the user sees *why* it was parked and what next step was recommended.
+3. **Reshape / re-evaluate** (this is the "analyse it again" step, scoped to shape — never task breakdown):
+   - **If `story_points > 5`** → divert into the **split flow**. It archives the backlog original to `stories/_archive/` with `superseded_by:`, writes the ≤5 SP children straight into `stories/<topic>/`, and rewrites dependents. The children take the re-slotted sprint (step 4) and `status: draft`.
+   - **If the deferral cause was design or docs** → re-run the **design-linkage gate** / **tech-feasibility gate** and resolve to a path / `none-needed` / `follows-template:` / an approved tech-spec addition.
+   - Allow editing `## Description` / `## Acceptance criteria` if the scope changed.
+4. **Re-slot to the next open sprint.** Default to the lowest-numbered sprint that still has at least one non-`done` story; never a fully completed sprint. Set `sprint:` to it. The user may override to any non-completed sprint.
+5. **Clear deferral state** — set `status: draft`, **remove the `original_sprint` field**, and keep `tasks_populated: false`.
+6. **Move the file** from `stories/_backlog/` back to `stories/<topic>/`. (In the split case the children are already written to the topic folder and the original is archived — `_backlog/` is left clear of this story either way.)
+7. **Regenerate `INDEX.md`.**
+8. **Hand off** — print: `Restored story-<topic>-<NN> to Sprint <N> (status: draft). Run /analyze-sprint <N> to re-analyze and break it into tasks.`
+
 ## Lint flow
 
 Read every `stories/**/story-*.md`. Parse frontmatter and Tasks section. Report issues; **never modify files**.
@@ -294,7 +315,10 @@ Read every `stories/**/story-*.md`. Parse frontmatter and Tasks section. Report 
 | **design-not-found** | `design:` references a path that doesn't exist | error |
 | **template-chain-empty** | `follows-template:` chain ends in empty `design:` | error |
 | **design-claim-mismatch** | `design: none-needed` but acceptance criteria mention UI | warning |
+| **deferred-parked** | `status: deferred` story sitting in `_backlog/` awaiting restore | info |
 | **stale** | `status: draft` for > 30 days (file mtime) | info |
+
+For `status: deferred` stories in `_backlog/`, **suppress** the `untasked`, `missing-design`, and `task-marker-mismatch` warnings — a deferred story legitimately has `tasks_populated: false` and may carry an unresolved design. Report only the single `deferred-parked` info line, and suggest `/manage-stories restore <id>` to bring it back into a sprint.
 
 After scanning, print a grouped report (one section per rule), suggest the relevant subcommand to fix where applicable (e.g., `/manage-stories split <id>` for oversize).
 
@@ -307,7 +331,7 @@ Read every `stories/**/story-*.md` (excluding `_archive/`). Parse YAML frontmatt
 
 > Generated by `/manage-stories index`. Do not hand-edit — changes overwrite.
 
-**Summary:** <N> stories · <SP> SP · <done> done · <in-progress> in-progress · <ready> ready · <draft> draft · <blocked> blocked
+**Summary:** <N> stories · <SP> SP · <done> done · <in-progress> in-progress · <ready> ready · <draft> draft · <blocked> blocked · <deferred> deferred (backlog)
 **Owners:** <owner> (<count>) · <owner> (<count>) · …
 
 ---
@@ -335,15 +359,26 @@ Read every `stories/**/story-*.md` (excluding `_archive/`). Parse YAML frontmatt
 
 ---
 
+## Backlog — deferred during analysis   (<N> stories · <SP> SP)
+
+> Deferred stories live in `stories/_backlog/` (parked by `/analyze-sprint`). They are **excluded from every sprint section above and from all sprint story/SP totals**. Bring one back with `/manage-stories restore <id>`.
+
+| ID | Title | SP | Orig. sprint | Status | Owner | Design | Depends on |
+|---|---|---|---|---|---|---|---|
+| story-<topic>-NN | Title | 4 | 1 | deferred | owner | basename or → ref or none-needed | comma list |
+
+---
+
 ## Column meanings
 
 - **Tasks:** `<completed + cancelled> / <total>`. A story is eligible for `status: done` only when this reads `N/N` and N > 0.
 - **Owner:** team member responsible for execution + testing. Empty cells flagged by lint as `unassigned`.
 - **Design:** linked filename basename, `none-needed`, or `→ story-<id>` for follows-template.
 - **Depends on:** comma-separated story IDs. Empty cell = no dependencies.
+- **Orig. sprint** (Backlog only): the sprint the story was planned for before deferral, from `original_sprint:`.
 ```
 
-Sort within each topic by sequence number ascending. Sprint names (`Content + Credibility`, `Community + Self-Serve`, `Operations + Growth`) come from blueprint §4.
+Sort within each topic by sequence number ascending. Sprint names (`Content + Credibility`, `Community + Self-Serve`, `Operations + Growth`) come from blueprint §4. Omit the Backlog section entirely when `stories/_backlog/` has no deferred stories.
 
 The output must be **idempotent**: running `index` twice in a row produces zero diff.
 
@@ -353,6 +388,7 @@ The output must be **idempotent**: running `index` twice in a row produces zero 
 - **Never auto-generate acceptance criteria the blueprint or tech-spec doesn't support.** If a criterion can't be grounded, write `- [ ] TBD — needs founder input on <topic>`.
 - **Never populate the `## Tasks` section.** Task breakdown is a downstream step. Always write the empty TODO placeholder.
 - **A story may only be marked `status: done`** when every task is `completed` or `cancelled` AND `tasks_populated: true`. The update flow enforces this and refuses to write otherwise.
+- **Restore returns a deferred story to `status: draft`, never straight to `ready` or `done`.** It clears `original_sprint`, re-slots to a non-completed sprint, and hands off to `/analyze-sprint` for re-analysis. It never populates tasks.
 - **Design-linkage check on every create.** Resolve `design:` to a path list / `none-needed` / `follows-template:`. Never silently write a UI-bearing story with empty design — user must explicitly choose `none-needed` if there's no UI surface.
 - **Tech-feasibility check on every create.** Before writing, every needed route / integration / table / auth assumption must already be in `TECHNICAL-REQUIREMENTS.md`. If a gap is found, ask the user (update tech spec / defer / record as open question).
 - **Sprint comes from the topic→sprint table.** Pre-fill on add; always ask on `admin` and `newsletter`. Never invent.
@@ -368,6 +404,7 @@ The skill, when invoked, may create/edit:
 - `stories/INDEX.md`
 - `stories/<topic>/story-<topic>-<NN>-<slug>.md`
 - `stories/_archive/<original-name>.md` (only on split)
+- `stories/_backlog/<name>.md` → `stories/<topic>/<name>.md` (only on restore — moves a deferred story back into its topic folder; the file leaves `_backlog/`)
 - `design/.gitkeep` (only if `design/` is missing — never creates design files themselves)
 
 The skill never edits files outside `stories/` and `design/`, with one exception: if the tech-feasibility gate's option (c) is chosen, the skill may append to `TECHNICAL-REQUIREMENTS.md` §14 (Open questions). It must show the user the proposed addition and get explicit confirmation before appending.
@@ -378,3 +415,4 @@ The skill never edits files outside `stories/` and `design/`, with one exception
 - A dependency refers to an archived story → ask whether to rewrite to its successor IDs (usually yes).
 - Tech-feasibility gap is ambiguous (the requirement could be implemented multiple ways, some supported, some not) → describe both interpretations and let the user pick.
 - The blueprint or tech-spec has been updated since the last init → run lint first, then add or update one-by-one; do not re-init.
+- A `restore` target story isn't in `_backlog/` or isn't `status: deferred` → say so and route to `update`/`split`; never fabricate a deferred state.

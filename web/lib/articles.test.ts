@@ -8,6 +8,7 @@ import {
   getArticleBySlug,
   getPublishedSlugs,
   getRelatedArticles,
+  getLatestArticles,
   clampPage,
   parseSort,
 } from "./articles";
@@ -154,5 +155,29 @@ describe("getCategoryCounts", () => {
 
     const counts = await getCategoryCounts();
     expect(counts).toEqual({ all: 3, "food-safety": 2, regulatory: 1 });
+  });
+});
+
+describe("getLatestArticles (story-homepage-04/05)", () => {
+  it("returns the newest published articles, in order", async () => {
+    const rows = [{ slug: "a" }, { slug: "b" }, { slug: "c" }, { slug: "d" }];
+    vi.mocked(createClient).mockReturnValue(clientWithQueue([{ data: rows, error: null }]));
+
+    const out = await getLatestArticles({ limit: 4 });
+    expect(out).toEqual(rows);
+  });
+
+  it("supports excluding the featured slug (rail never repeats the editorial feature)", async () => {
+    vi.mocked(createClient).mockReturnValue(
+      clientWithQueue([{ data: [{ slug: "b" }, { slug: "c" }], error: null }]),
+    );
+
+    const out = await getLatestArticles({ limit: 4, excludeSlug: "featured" });
+    expect(out).toEqual([{ slug: "b" }, { slug: "c" }]);
+  });
+
+  it("returns [] when there are no published articles", async () => {
+    vi.mocked(createClient).mockReturnValue(clientWithQueue([{ data: null, error: null }]));
+    expect(await getLatestArticles({ limit: 4 })).toEqual([]);
   });
 });

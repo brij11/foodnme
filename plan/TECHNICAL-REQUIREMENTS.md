@@ -98,13 +98,15 @@ RLS is on for every table with restrictive defaults. Server-side admin operation
 | `jobs` (status='active') | yes | yes | owner write; admin approve |
 | `applications` | no | self (applicant) + employer-of-job | applicant insert; employer update status |
 | `experts` (status='active') | yes | yes | self update; admin approve/feature |
+| `admin_audit_log` | no | admin only | server insert (service role); no update/delete |
 
 ### 4.2 Tables
 
 ```sql
 articles            (id, title, slug UNIQUE, excerpt, content_mdx, category, tags[],
                      cover_image_url, author_name, read_time_mins, is_published,
-                     published_at, related_resource_slug NULL REFERENCES resources(slug),
+                     published_at, is_featured boolean DEFAULT false,
+                     related_resource_slug NULL REFERENCES resources(slug),
                      created_at, search_vector tsvector GENERATED)
 
 resources           (id, title, slug UNIQUE, description, category, file_url, file_type,
@@ -126,14 +128,19 @@ jobs                (id, title, company_name, location, job_type, salary_min, sa
 applications        (id, job_id REFERENCES jobs, applicant_id REFERENCES profiles,
                      resume_url, cover_note, status DEFAULT 'submitted', applied_at)
 
-experts             (id, user_id REFERENCES profiles, full_name, avatar_url, specializations[],
-                     bio, experience_years, certifications[], location, contact_email,
+experts             (id, user_id REFERENCES profiles, full_name, title, avatar_url, specializations[],
+                     bio, experience_years, hourly_rate, certifications[], location, contact_email,
                      is_available DEFAULT true, status DEFAULT 'pending',
                      is_featured DEFAULT false, created_at,
                      search_vector tsvector GENERATED)
+
+admin_audit_log     (id, actor_id REFERENCES profiles, action, target_table, target_id,
+                     before jsonb, after jsonb, created_at)
 ```
 
-Indexes: `(category, is_published, published_at desc)` and `(slug)` on `articles`; GIN on every `search_vector`; `(employer_id)` on `jobs`; `(job_id, applicant_id)` unique on `applications`.
+Indexes: `(category, is_published, published_at desc)` and `(slug)` on `articles`; GIN on every `search_vector`; `(employer_id)` on `jobs`; `(job_id, applicant_id)` unique on `applications`; `(actor_id, created_at desc)` on `admin_audit_log`.
+
+**Views.** `public_profiles` — a view over `profiles` exposing only `id`, `full_name`, `avatar_url` (the public-fields subset from §4.1), with `select` granted to `anon` + `authenticated`. Any public join that needs a profile's display name or avatar (e.g. experts/jobs author info) reads this view — never `select *` on `profiles`. RLS on the underlying `profiles` table still applies.
 
 ### 4.3 Seed
 
@@ -226,10 +233,11 @@ POST /api/download
   → generate signed Supabase Storage URL (60s TTL)
   → 200 { ok: true, data: { download_url } }
 
-POST /api/upload  (admin)
-  multipart: { file, kind: 'template'|'cover'|'avatar' }
+POST /api/upload  (auth; role enforced per kind)
+  multipart: { file, kind: 'template'|'cover'|'avatar'|'resume' }
   → magic-byte + MIME whitelist + size cap (§9.2)
-  → upload to Supabase Storage
+  → auth per kind: 'template'|'cover' = admin · 'avatar' = authenticated expert · 'resume' = authenticated seeker
+  → upload to Supabase Storage at the requester's namespaced path (anon writes impossible by RLS)
   → 200 { ok: true, data: { url, path } }
 
 GET /api/healthz
@@ -240,6 +248,7 @@ POST   /api/jobs                       (employer)        + turnstile + idempoten
 PATCH  /api/jobs/:id                   (owner or admin)
 POST   /api/applications               (seeker)          + turnstile + idempotency
 POST   /api/expert-inquiry             (public)          + turnstile
+POST   /api/experts                    (expert, self)    → insert own profile (status='pending'), notify admin
 PATCH  /api/experts/:id                (self or admin)
 PATCH  /api/experts/:id/availability   (self)
 POST   /api/admin/jobs/:id/approve     (admin)

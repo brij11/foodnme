@@ -78,6 +78,26 @@ export async function listArticles(opts: {
   };
 }
 
+/**
+ * The N most-recent published articles, newest first. Optionally excludes one slug
+ * (the homepage editorial feature, so the "Latest from the blog" rail never repeats it —
+ * story-homepage-04 / story-homepage-06). Also feeds the hero collage covers (story-homepage-05).
+ */
+export async function getLatestArticles(opts: {
+  limit: number;
+  excludeSlug?: string;
+}): Promise<ArticleListItem[]> {
+  const supabase = createPublicClient();
+  let query = supabase.from("articles").select(LIST_COLUMNS).eq("is_published", true);
+  if (opts.excludeSlug) query = query.neq("slug", opts.excludeSlug);
+
+  const { data, error } = await query
+    .order("published_at", { ascending: false })
+    .limit(opts.limit);
+  if (error) throw new Error(`getLatestArticles failed: ${error.message}`);
+  return (data as ArticleListItem[] | null) ?? [];
+}
+
 /** Full article row (includes the MDX body) for the detail page. */
 export type Article = ArticleListItem & {
   content_mdx: string;

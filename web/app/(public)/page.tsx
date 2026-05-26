@@ -1,37 +1,69 @@
-import Link from "next/link";
-
-const primaryCta =
-  "inline-flex items-center justify-center gap-2 rounded-md bg-primary px-[22px] py-3 font-heading text-[0.82rem] font-bold text-white transition hover:bg-primary-deep hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background";
-const outlineCta =
-  "inline-flex items-center justify-center gap-2 rounded-md border-[1.5px] border-border bg-card-bg px-[22px] py-3 font-heading text-[0.82rem] font-bold text-primary transition hover:border-primary hover:bg-tag-safe-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+import type { Metadata } from "next";
+import { getSiteStats } from "@/lib/stats";
+import { getLatestArticles } from "@/lib/articles";
+import { Hero } from "@/components/home/Hero";
+import { ValueStrip } from "@/components/home/ValueStrip";
+import { Scenarios } from "@/components/home/Scenarios";
+import { KnowledgeHubSection } from "@/components/home/KnowledgeHubSection";
+import { FinalCta } from "@/components/home/FinalCta";
 
 /**
- * Homepage placeholder. The full narrative homepage (hero, scenarios, editorial feature,
- * testimonials, stats, featured, newsletter — UI-DESIGN-HANDOFF.md §3.6) is story-homepage-03
- * + homepage-04, currently deferred in the backlog. This minimal hero keeps `/` valid and
- * accessible (one Fraunces H1) and renders inside the public chrome.
+ * Homepage — the narrative arc of UI-DESIGN-HANDOFF.md §3.6, built across stories
+ * homepage-04/05/06/07. SSG with on-demand revalidation (TECHNICAL-REQUIREMENTS.md §7):
+ * data is read at build / revalidate via cookie-free clients, so `/` stays static.
+ *
+ * This shell (story-homepage-05) establishes all ten §3.6 sections in order and owns
+ * #1 Hero, #2 Value strip, #3 Scenarios, #4 the Knowledge-Hub container, and #8 Final CTA.
+ * The remaining slots are mount points filled by:
+ *   #4 editorial feature → story-homepage-06   #4 latest rail → story-homepage-04
+ *   #5 testimonials, #6 stats row, #9 Good-to-know → story-homepage-06
+ *   #7 Featured this week, #10 Newsletter → story-homepage-07
  */
-export default function HomePage() {
+export const metadata: Metadata = {
+  title: "foodnme — Practical resources for a safer food ecosystem",
+  description:
+    "Field-tested HACCP plans, audit checklists, and expert writing for food safety, QC, and regulatory teams across India.",
+  openGraph: {
+    title: "foodnme — Practical resources for a safer food ecosystem",
+    description:
+      "Field-tested HACCP plans, audit checklists, and expert writing for food safety, QC, and regulatory teams across India.",
+    type: "website",
+  },
+};
+
+export default async function HomePage() {
+  const [stats, recentCovers] = await Promise.all([
+    getSiteStats(),
+    getLatestArticles({ limit: 2 }),
+  ]);
+  const covers = recentCovers
+    .map((a) => a.cover_image_url)
+    .filter((u): u is string => typeof u === "string" && u.length > 0);
+
   return (
-    <section className="mx-auto max-w-content px-6 py-20 lg:px-12">
-      <p className="font-heading text-[0.65rem] font-bold uppercase tracking-[0.14em] text-primary">
-        Food technology knowledge + community
-      </p>
-      <h1 className="mt-4 max-w-[640px] font-display text-[clamp(2.4rem,5vw,3.6rem)] font-semibold leading-[1.05] tracking-[-0.025em] text-text">
-        Practical resources for a <span className="text-primary italic">safer</span> food ecosystem.
-      </h1>
-      <p className="mt-5 max-w-[560px] font-body text-lg leading-relaxed text-muted">
-        Guidance on food safety, quality control, and regulatory compliance — plus templates
-        and consulting for food-tech professionals across India and beyond.
-      </p>
-      <div className="mt-8 flex flex-wrap gap-3">
-        <Link href="/blog" className={primaryCta}>
-          Browse the Knowledge Hub
-        </Link>
-        <Link href="/templates" className={outlineCta}>
-          Download templates
-        </Link>
-      </div>
-    </section>
+    <>
+      {/* §3.6 #1 */}
+      <Hero stats={stats} covers={covers} />
+
+      {/* §3.6 #2 */}
+      <ValueStrip />
+
+      {/* §3.6 #3 */}
+      <Scenarios />
+
+      {/* §3.6 #4 — editorial feature (homepage-06) + latest rail (homepage-04) mount here */}
+      <KnowledgeHubSection />
+
+      {/* §3.6 #5 Testimonials, #6 Stats row — homepage-06 */}
+
+      {/* §3.6 #7 Featured this week — homepage-07 */}
+
+      {/* §3.6 #8 */}
+      <FinalCta />
+
+      {/* §3.6 #9 Good to know (Q&A) — homepage-06 */}
+
+      {/* §3.6 #10 Newsletter — homepage-07 */}
+    </>
   );
 }

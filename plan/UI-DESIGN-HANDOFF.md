@@ -187,7 +187,7 @@ The homepage was redesigned away from a directory of card grids ("look at everyt
 1. Hero
 2. Value strip (one-sentence positioning, left-edge accent)
 3. **Scenarios** — 4 user-need framings ("Audit on Monday?", "Hiring a QC microbiologist?") each linking to the matching product
-4. **Editorial feature** — ONE large article preview (image left, content right), not a 3-card grid
+4. **Editorial feature + latest rail** — under the "From the Knowledge Hub" header (overline "This week's read", "All articles → /blog" link): ONE large article preview (image left, content right), *not* a 3-card grid, accompanied by a compact **"Latest from the blog" rail** — the 4 most-recent published articles as plain title links (`published_at desc`) — so visitors can browse onward without leaving the narrative. (Rail added 2026-05-26; owned by `story-homepage-04`, feature by `story-homepage-06`.)
 5. **Testimonials** — 2 large blockquotes on cream background, with Fraunces type and accent-color quote marks
 6. **Stats row** — moved here as mid-page social proof
 7. **Featured this week** — paired hero cards (one template + one expert, color-accent strips on top)
@@ -297,6 +297,16 @@ All animations respect `prefers-reduced-motion`. Animations used:
 | Newsletter "live" dot | Slow pulse | "Active" signal |
 
 → Enforced in `TECHNICAL-REQUIREMENTS.md` §8.
+
+### 4.11 Register is a single form, not the prototype's two-step wizard
+
+The prototype `RegisterPage` (`design/screens-auth.jsx`) is a two-step wizard
+(details → role picker). Production collapses this into a **single form** — name,
+email, password, and an inline role-card picker, one "Sign Up" button. The
+two-step split added friction with no payoff for a four-field form; the role
+cards' visual treatment is retained. `signUp()` fires once on submit.
+
+→ Story: story-auth-02.
 
 ---
 

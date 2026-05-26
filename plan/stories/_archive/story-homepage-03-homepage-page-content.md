@@ -7,12 +7,18 @@ story_points: 4
 status: deferred
 owner: brij
 tasks_populated: false
+superseded_by:
+  - story-homepage-05
+  - story-homepage-06
+  - story-homepage-07
 dependencies:
   - story-homepage-02
   - story-newsletter-01
 design:
   - design/screens-main.jsx
 ---
+
+> **♻ SUPERSEDED on restore 2026-05-26.** This deferred story was restored via `/manage-stories restore story-homepage-03` and split (>5 SP) into the narrative-homepage children `story-homepage-05` (hero/value-strip/scenarios/CTA), `story-homepage-06` (editorial feature/testimonials/stats/Q&A), and `story-homepage-07` ("Featured this week"/newsletter), re-slotted to Sprint 3 as `status: draft`. Original content preserved below for history.
 
 # story-homepage-03 — Homepage page content (hero, stats, services snapshot, newsletter slot)
 
