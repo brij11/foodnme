@@ -203,7 +203,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_template_download: {
+        Args: { p_template_id: string }
+        Returns: {
+          file_url: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

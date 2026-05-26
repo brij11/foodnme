@@ -11,8 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "db:reset": "supabase db reset",
-    "db:types": "supabase gen types typescript --local > types/database.ts"
+    "db:reset": "npx supabase db reset",
+    "db:types": "npx supabase gen types typescript --local > types/database.ts"
   },
   "dependencies": {
     "@shikijs/rehype": "^4.1.0",
