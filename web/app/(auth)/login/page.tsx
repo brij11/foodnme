@@ -30,6 +30,8 @@ function LoginForm() {
 
   // An expired/used verification link bounces back here (story-auth-03 AC#3).
   const verificationFailed = params.get("error") === "verification_failed";
+  // A completed password reset lands here (story-auth-04 AC#7).
+  const resetSuccess = params.get("reset") === "success";
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -99,6 +101,12 @@ function LoginForm() {
       </p>
 
       <form onSubmit={onSubmit} noValidate className="mt-7 flex flex-col gap-5">
+        {resetSuccess ? (
+          <Alert tone="success">
+            Your password has been reset. Sign in with your new password.
+          </Alert>
+        ) : null}
+
         {verificationFailed && !unverified ? (
           <Alert tone="warning">
             That verification link is invalid or has expired. Sign in to request a new one.
