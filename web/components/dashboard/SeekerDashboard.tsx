@@ -13,6 +13,25 @@ export type ApplicationRow = {
   job: { id: string; title: string; company_name: string; location: string } | null;
 };
 
+export type SeekerStats = {
+  total: number;
+  submitted: number;
+  reviewed: number;
+  rejected: number;
+  saved: number;
+};
+
+function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-card-bg p-5">
+      <div className="font-body text-[0.78rem] text-muted">{label}</div>
+      {/* numbers in dark-olive per §4.1 */}
+      <div className="mt-2 font-heading text-[1.6rem] font-bold text-text">{value}</div>
+      {sub ? <div className="mt-1 font-body text-[0.74rem] text-muted">{sub}</div> : null}
+    </div>
+  );
+}
+
 const STATUS_TAG: Record<string, { variant: TagVariant; label: string }> = {
   submitted: { variant: "neutral", label: "Submitted" },
   reviewed: { variant: "orange", label: "Reviewed" },
@@ -31,10 +50,12 @@ export function SeekerDashboard({
   fullName,
   applications,
   activeFilter,
+  stats,
 }: {
   fullName: string;
   applications: ApplicationRow[];
   activeFilter: string;
+  stats: SeekerStats;
 }) {
   const firstName = fullName.trim().split(/\s+/)[0] || "there";
 
@@ -42,6 +63,20 @@ export function SeekerDashboard({
     return (
       <>
         <DashboardHeader title={`Welcome back, ${firstName}.`} subtitle="Track every role you've applied to." />
+
+        {/* 4-card stats grid (story-jobs-13). Profile views / Match score are not yet modeled,
+            so they render "—" rather than fabricated numbers (a future analytics story will wire them). */}
+        <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="seeker-stats">
+          <StatCard
+            label="Applications"
+            value={String(stats.total)}
+            sub={`${stats.submitted} submitted · ${stats.reviewed} reviewed · ${stats.rejected} closed`}
+          />
+          <StatCard label="Saved jobs" value={String(stats.saved)} />
+          <StatCard label="Profile views" value="—" />
+          <StatCard label="Match score" value="—" />
+        </div>
+
         <div className="mb-5 flex flex-wrap gap-2">
           {FILTERS.map((f) => (
             <Link

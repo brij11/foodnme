@@ -49,4 +49,20 @@ test.describe("seeker dashboard (story-jobs-07)", () => {
     await page.goto("/dashboard/seeker", { timeout: 60000 });
     await page.waitForURL("**/dashboard/employer");
   });
+
+  test("renders the stats grid: Applications total (unfiltered) + '—' for untracked metrics (story-jobs-13)", async ({
+    page,
+  }) => {
+    await signInViaUI(page, SEEKER, PW);
+    await page.goto("/dashboard/seeker", { timeout: 60000 });
+    const grid = page.getByTestId("seeker-stats");
+    await expect(grid).toBeVisible();
+    await expect(grid).toContainText("Applications");
+    await expect(grid).toContainText("1 submitted"); // the seeded application
+    await expect(grid).toContainText("Saved jobs");
+    await expect(grid).toContainText("Profile views");
+    await expect(grid).toContainText("Match score");
+    // Untracked metrics are em-dashes, never fabricated.
+    await expect(grid.getByText("—")).toHaveCount(2);
+  });
 });

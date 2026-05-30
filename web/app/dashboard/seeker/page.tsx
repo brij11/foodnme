@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { SeekerDashboard, type ApplicationRow } from "@/components/dashboard/SeekerDashboard";
+import {
+  SeekerDashboard,
+  type ApplicationRow,
+  type SeekerStats,
+} from "@/components/dashboard/SeekerDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -42,11 +46,26 @@ export default async function SeekerDashboardPage({
     job: Array.isArray(a.job) ? (a.job[0] ?? null) : a.job,
   }));
 
+  // Stats are derived from ALL of the seeker's applications (unfiltered), not the filtered list.
+  const { data: statusRows } = await svc
+    .from("applications")
+    .select("status")
+    .eq("applicant_id", user.id);
+  const stats: SeekerStats = { total: 0, submitted: 0, reviewed: 0, rejected: 0, saved: 0 };
+  for (const r of (statusRows as { status: string }[] | null) ?? []) {
+    stats.total += 1;
+    if (r.status === "submitted") stats.submitted += 1;
+    else if (r.status === "reviewed") stats.reviewed += 1;
+    else if (r.status === "rejected") stats.rejected += 1;
+  }
+  // saved stays 0 until the saved-jobs feature (story-jobs-15) lands a saved_items table.
+
   return (
     <SeekerDashboard
       fullName={profile?.full_name || user.email || "there"}
       applications={applications}
       activeFilter={filter}
+      stats={stats}
     />
   );
 }
