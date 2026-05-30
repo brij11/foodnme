@@ -626,6 +626,17 @@ export type Database = {
         }[]
       }
       is_admin: { Args: { uid: string }; Returns: boolean }
+      search_all: {
+        Args: { p_query: string; p_type?: string }
+        Returns: {
+          excerpt: string
+          id: string
+          rank: number
+          title: string
+          type: string
+          url: string
+        }[]
+      }
       valid_engagement_types: { Args: { p: Json }; Returns: boolean }
     }
     Enums: {
