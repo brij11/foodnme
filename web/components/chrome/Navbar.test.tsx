@@ -1,7 +1,25 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/blog" }));
+const push = vi.fn();
+const refresh = vi.fn();
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/blog",
+  useRouter: () => ({ push, refresh }),
+}));
+
+// Controllable Supabase session (story-homepage-09).
+let mockUser: { email: string; user_metadata: Record<string, unknown> } | null = null;
+const signOutMock = vi.fn().mockResolvedValue({ error: null });
+vi.mock("@/lib/supabase/client", () => ({
+  createClient: () => ({
+    auth: {
+      getUser: async () => ({ data: { user: mockUser } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
+      signOut: signOutMock,
+    },
+  }),
+}));
 
 import { Navbar } from "./Navbar";
 import { ConsultationModalProvider } from "@/components/consultation/ConsultationModalProvider";
@@ -13,6 +31,13 @@ function renderNav() {
     </ConsultationModalProvider>,
   );
 }
+
+beforeEach(() => {
+  mockUser = null;
+  push.mockClear();
+  refresh.mockClear();
+  signOutMock.mockClear();
+});
 
 describe("Navbar (homepage-02)", () => {
   it("renders the six §2.1 items in order with the dark-olive logo (AC#1,2)", () => {
@@ -55,5 +80,57 @@ describe("Navbar (homepage-02)", () => {
     const { container } = renderNav();
     const nav = container.querySelector("nav")!;
     expect(nav.className).toContain("after:w-[var(--reading-progress,0%)]");
+  });
+});
+
+describe("Navbar auth region (story-homepage-09)", () => {
+  it("signed out: shows a 'Sign in' link to /login (AC#1)", async () => {
+    mockUser = null;
+    renderNav();
+    const signIn = await screen.findAllByRole("link", { name: "Sign in" });
+    expect(signIn[0]).toHaveAttribute("href", "/login");
+    expect(screen.queryByRole("button", { name: "Account menu" })).toBeNull();
+  });
+
+  it("signed in: account button + dropdown with name, email, role, Dashboard, Sign out (AC#2,3)", async () => {
+    mockUser = { email: "sam@foodnme.test", user_metadata: { full_name: "Sam Patel", role: "expert" } };
+    renderNav();
+
+    const acct = await screen.findByRole("button", { name: "Account menu" });
+    expect(acct).toHaveAttribute("aria-expanded", "false");
+    // 'Sign in' link is gone once authenticated.
+    expect(screen.queryByRole("link", { name: "Sign in" })).toBeNull();
+
+    fireEvent.click(acct);
+    expect(acct).toHaveAttribute("aria-expanded", "true");
+    const menu = screen.getByRole("menu");
+    expect(within(menu).getByText("Sam Patel")).toBeInTheDocument();
+    expect(within(menu).getByText("sam@foodnme.test")).toBeInTheDocument();
+    expect(within(menu).getByText("Expert")).toBeInTheDocument(); // role badge
+    expect(within(menu).getByRole("menuitem", { name: /Dashboard/ })).toHaveAttribute(
+      "href",
+      "/dashboard",
+    );
+    expect(within(menu).getByRole("menuitem", { name: /Sign out/ })).toBeInTheDocument();
+  });
+
+  it("signed in: Escape closes the dropdown (AC#5)", async () => {
+    mockUser = { email: "sam@foodnme.test", user_metadata: { full_name: "Sam Patel", role: "seeker" } };
+    renderNav();
+    const acct = await screen.findByRole("button", { name: "Account menu" });
+    fireEvent.click(acct);
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+  });
+
+  it("Sign out calls Supabase sign-out and returns home (AC#4)", async () => {
+    mockUser = { email: "sam@foodnme.test", user_metadata: { full_name: "Sam Patel", role: "seeker" } };
+    renderNav();
+    const acct = await screen.findByRole("button", { name: "Account menu" });
+    fireEvent.click(acct);
+    fireEvent.click(screen.getByRole("menuitem", { name: /Sign out/ }));
+    await waitFor(() => expect(signOutMock).toHaveBeenCalled());
+    expect(push).toHaveBeenCalledWith("/");
   });
 });
