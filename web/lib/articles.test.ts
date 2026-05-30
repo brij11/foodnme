@@ -9,6 +9,7 @@ import {
   getPublishedSlugs,
   getRelatedArticles,
   getLatestArticles,
+  getFeaturedArticle,
   clampPage,
   parseSort,
 } from "./articles";
@@ -211,5 +212,22 @@ describe("getLatestArticles (story-homepage-04/05)", () => {
   it("returns [] when there are no published articles", async () => {
     vi.mocked(createClient).mockReturnValue(clientWithQueue([{ data: null, error: null }]));
     expect(await getLatestArticles({ limit: 4 })).toEqual([]);
+  });
+});
+
+describe("getFeaturedArticle (story-homepage-04/06)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("returns the single most-recent published article", async () => {
+    vi.mocked(createClient).mockReturnValue(
+      clientWithQueue([{ data: [{ slug: "newest" }], error: null }]),
+    );
+    const out = await getFeaturedArticle();
+    expect(out?.slug).toBe("newest");
+  });
+
+  it("returns null when no published articles exist", async () => {
+    vi.mocked(createClient).mockReturnValue(clientWithQueue([{ data: [], error: null }]));
+    expect(await getFeaturedArticle()).toBeNull();
   });
 });

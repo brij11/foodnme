@@ -142,6 +142,21 @@ export async function getLatestArticles(opts: {
 }
 
 /**
+ * The single article shown as the homepage editorial feature (§3.6 #4). The selection is
+ * the coordination point between the editorial feature (story-homepage-06) and the
+ * "Latest from the blog" rail (story-homepage-04): the shell fetches it once, the feature
+ * renders it, and the rail excludes its slug so no article appears twice.
+ *
+ * Currently returns the most-recent published article. story-homepage-06 will extend this
+ * to prefer an explicitly-featured article (`articles.is_featured`), falling back to
+ * most-recent — at which point the rail exclusion still holds because both read this helper.
+ */
+export async function getFeaturedArticle(): Promise<ArticleListItem | null> {
+  const [latest] = await getLatestArticles({ limit: 1 });
+  return latest ?? null;
+}
+
+/**
  * Full article row (includes the MDX body) for the detail page. Carries the author expert's
  * display fields plus that expert's published-article count for the author bio card (blog-06/07).
  */

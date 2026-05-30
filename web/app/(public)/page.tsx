@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { getSiteStats } from "@/lib/stats";
-import { getLatestArticles } from "@/lib/articles";
+import { getLatestArticles, getFeaturedArticle } from "@/lib/articles";
 import { Hero } from "@/components/home/Hero";
 import { ValueStrip } from "@/components/home/ValueStrip";
 import { Scenarios } from "@/components/home/Scenarios";
 import { KnowledgeHubSection } from "@/components/home/KnowledgeHubSection";
+import { LatestArticlesRail } from "@/components/home/LatestArticlesRail";
 import { FinalCta } from "@/components/home/FinalCta";
 
 /**
@@ -32,10 +33,18 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [stats, recentCovers] = await Promise.all([
+  // The editorial feature (story-homepage-06) and the "Latest from the blog" rail
+  // (story-homepage-04) share one feature selection so no article appears twice: fetch the
+  // feature once here, then exclude its slug from the rail (story-homepage-04 AC#1).
+  const [stats, recentCovers, featured] = await Promise.all([
     getSiteStats(),
     getLatestArticles({ limit: 2 }),
+    getFeaturedArticle(),
   ]);
+  const latestArticles = await getLatestArticles({
+    limit: 4,
+    excludeSlug: featured?.slug,
+  });
   const covers = recentCovers
     .map((a) => a.cover_image_url)
     .filter((u): u is string => typeof u === "string" && u.length > 0);
@@ -52,7 +61,10 @@ export default async function HomePage() {
       <Scenarios />
 
       {/* §3.6 #4 — editorial feature (homepage-06) + latest rail (homepage-04) mount here */}
-      <KnowledgeHubSection />
+      <KnowledgeHubSection>
+        {/* Editorial feature (story-homepage-06) mounts above the rail */}
+        <LatestArticlesRail articles={latestArticles} />
+      </KnowledgeHubSection>
 
       {/* §3.6 #5 Testimonials, #6 Stats row — homepage-06 */}
 

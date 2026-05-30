@@ -21,6 +21,22 @@ test.describe("public layout + homepage (homepage-02)", () => {
     await expect(page.getByRole("heading", { name: "Contact" })).toBeVisible();
   });
 
+  test("Latest from the blog rail links to /blog articles (homepage-04 AC#1,#3)", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const rail = page.getByText("Latest from the blog").locator("xpath=following-sibling::ul[1]");
+    await expect(rail).toBeVisible();
+    const links = rail.getByRole("link");
+    const count = await links.count();
+    expect(count).toBeGreaterThan(0);
+    expect(count).toBeLessThanOrEqual(4);
+    // Every rail item points at an article detail route.
+    for (let i = 0; i < count; i++) {
+      await expect(links.nth(i)).toHaveAttribute("href", /^\/blog\/.+/);
+    }
+  });
+
   test("skip-to-content link reveals on focus (AC#10)", async ({ page }) => {
     await page.goto("/");
     await page.keyboard.press("Tab");
