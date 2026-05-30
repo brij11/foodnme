@@ -10,6 +10,8 @@ import { ArticleTemplateCTA } from "@/components/blog/ArticleTemplateCTA";
 import { RelatedArticles } from "@/components/blog/RelatedArticles";
 import { AuthorChip } from "@/components/blog/AuthorChip";
 import { AuthorBioCard } from "@/components/blog/AuthorBioCard";
+import { ShareRow } from "@/components/blog/ShareRow";
+import { ReadingProgress } from "@/components/blog/ReadingProgress";
 import { Tag } from "@/components/ui/Tag";
 import { Icon } from "@/components/ui/Icon";
 import { NewsletterBanner } from "@/components/newsletter/NewsletterBanner";
@@ -46,6 +48,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
 
   return (
     <article className="mx-auto max-w-content px-6 py-12 lg:px-12">
+      <ReadingProgress targetId="article-body" />
       <div className="mx-auto max-w-article">
         <Breadcrumb
           items={[
@@ -80,7 +83,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
         </div>
       ) : null}
 
-      <div className="mt-10">
+      <div id="article-body" className="mt-10">
         <ArticleBody mdx={article.content_mdx} />
       </div>
 
@@ -95,6 +98,8 @@ export default async function ArticlePage({ params }: { params: { slug: string }
           ))}
         </div>
       ) : null}
+
+      <ShareRow title={article.title} />
 
       <AuthorBioCard author={article.author} articleCount={article.author_article_count} />
 
