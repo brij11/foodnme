@@ -59,6 +59,15 @@ export async function getAllTemplateSlugs(): Promise<string[]> {
   return ((data as { slug: string }[] | null) ?? []).map((r) => r.slug);
 }
 
+/** Templates by id (for search results — story-search-02), as template cards. */
+export async function getTemplatesByIds(ids: string[]): Promise<Resource[]> {
+  if (ids.length === 0) return [];
+  const supabase = createPublicClient();
+  const { data, error } = await supabase.from("resources").select(RESOURCE_COLUMNS).in("id", ids);
+  if (error) throw new Error(`getTemplatesByIds failed: ${error.message}`);
+  return (data as Resource[] | null) ?? [];
+}
+
 /**
  * Similar templates for the detail-page footer (templates-02): same category first, excluding
  * the current template; if the category yields fewer than `limit`, top up with the

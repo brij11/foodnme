@@ -239,6 +239,19 @@ export async function getRelatedArticles(
   return chosen.slice(0, limit);
 }
 
+/** Published articles by id (for search results — story-search-02), as list-card items. */
+export async function getArticlesByIds(ids: string[]): Promise<ArticleListItem[]> {
+  if (ids.length === 0) return [];
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("articles")
+    .select(LIST_COLUMNS)
+    .in("id", ids)
+    .eq("is_published", true);
+  if (error) throw new Error(`getArticlesByIds failed: ${error.message}`);
+  return ((data as RawListRow[] | null) ?? []).map(mapListItem);
+}
+
 /** All published slugs — for `generateStaticParams`. */
 export async function getPublishedSlugs(): Promise<string[]> {
   const supabase = createPublicClient();

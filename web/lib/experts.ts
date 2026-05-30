@@ -144,6 +144,19 @@ export async function getSimilarExperts(
   return (data as ExpertCardData[] | null) ?? [];
 }
 
+/** Active experts by id (for search results — story-search-02), as directory cards. */
+export async function getExpertsByIds(ids: string[]): Promise<ExpertCardData[]> {
+  if (ids.length === 0) return [];
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("experts")
+    .select(CARD_COLUMNS)
+    .eq("status", "active")
+    .in("id", ids);
+  if (error) throw new Error(`getExpertsByIds failed: ${error.message}`);
+  return (data as ExpertCardData[] | null) ?? [];
+}
+
 /** 2-letter initials fallback when an expert has no avatar (CLAUDE.md rendering rule). */
 export function expertInitials(fullName: string): string {
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
