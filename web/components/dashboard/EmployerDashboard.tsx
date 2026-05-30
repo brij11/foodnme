@@ -16,14 +16,55 @@ export type EmployerJob = {
   applicant_count: number;
 };
 
+export type ApplicantRow = {
+  id: string;
+  candidate_name: string;
+  job_title: string;
+  applied_at: string;
+  status: string;
+  resume_signed_url: string | null;
+};
+
+export type EmployerStats = {
+  activeListings: number;
+  totalApplicants: number;
+  pendingReview: number;
+};
+
 const STATUS_TAG: Record<string, { variant: TagVariant; label: string }> = {
   pending: { variant: "orange", label: "Pending review" },
   active: { variant: "green", label: "Active" },
   closed: { variant: "neutral", label: "Closed" },
 };
 
-// Employer dashboard (story-jobs-04): post jobs + manage own listings.
-export function EmployerDashboard({ fullName, jobs }: { fullName: string; jobs: EmployerJob[] }) {
+const APP_STATUS_TAG: Record<string, { variant: TagVariant; label: string }> = {
+  submitted: { variant: "neutral", label: "Submitted" },
+  reviewed: { variant: "orange", label: "Reviewed" },
+  rejected: { variant: "accent", label: "Closed" },
+};
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-card-bg p-5">
+      <div className="font-body text-[0.78rem] text-muted">{label}</div>
+      {/* numbers in dark-olive per §4.1 */}
+      <div className="mt-2 font-heading text-[1.6rem] font-bold text-text">{value}</div>
+    </div>
+  );
+}
+
+// Employer dashboard (story-jobs-04 listings; story-jobs-14 stats + applicant review).
+export function EmployerDashboard({
+  fullName,
+  jobs,
+  applicants,
+  stats,
+}: {
+  fullName: string;
+  jobs: EmployerJob[];
+  applicants: ApplicantRow[];
+  stats: EmployerStats;
+}) {
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
   const [closing, setClosing] = useState<string | null>(null);
@@ -85,11 +126,66 @@ export function EmployerDashboard({ fullName, jobs }: { fullName: string; jobs: 
   }
 
   const header = (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-      <DashboardHeader title="Employer dashboard" subtitle="Manage your job postings and review applicants." />
-      <Button onClick={() => setModalOpen(true)}>Post a job</Button>
-    </div>
+    <>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <DashboardHeader title="Employer dashboard" subtitle="Manage your job postings and review applicants." />
+        <Button onClick={() => setModalOpen(true)}>Post a job</Button>
+      </div>
+      {/* 4-card stats grid (story-jobs-14). Avg. time to hire isn't modeled (no hire-event
+          tracking) so it renders "—" — never a fabricated number; a future story wires it. */}
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="employer-stats">
+        <StatCard label="Active listings" value={String(stats.activeListings)} />
+        <StatCard label="Total applicants" value={String(stats.totalApplicants)} />
+        <StatCard label="Pending review" value={String(stats.pendingReview)} />
+        <StatCard label="Avg. time to hire" value="—" />
+      </div>
+    </>
   );
+
+  function ApplicantsView() {
+    if (applicants.length === 0) {
+      return (
+        <EmptyState
+          title="No applicants yet"
+          message="When candidates apply to your listings, they'll appear here with their resume and status."
+          action={{ label: "Browse the job board", href: "/jobs" }}
+        />
+      );
+    }
+    return (
+      <ul className="flex flex-col gap-3" data-testid="applicants-list">
+        {applicants.map((a) => {
+          const s = APP_STATUS_TAG[a.status] ?? APP_STATUS_TAG.submitted!;
+          return (
+            <li
+              key={a.id}
+              data-testid="applicant-row"
+              className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card-bg px-5 py-4"
+            >
+              <div className="min-w-0 flex-1">
+                <span className="font-heading text-[0.98rem] font-bold text-text">{a.candidate_name}</span>
+                <p className="mt-0.5 font-body text-[0.78rem] text-muted">
+                  {a.job_title} · Applied{" "}
+                  {new Date(a.applied_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                </p>
+              </div>
+              {a.resume_signed_url ? (
+                <a
+                  href={a.resume_signed_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-md border-[1.5px] border-border px-3 py-1.5 font-heading text-[0.74rem] font-bold text-primary hover:border-primary"
+                >
+                  View resume
+                </a>
+              ) : null}
+              <Tag variant={s.variant}>{s.label}</Tag>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
 
   const tabs: DashboardTab[] = [
     { id: "overview", label: "Overview", icon: "trending", render: () => (<>{header}<JobList /></>) },
@@ -99,7 +195,13 @@ export function EmployerDashboard({ fullName, jobs }: { fullName: string; jobs: 
       label: "Applicants",
       icon: "user",
       render: () => (
-        <EmptyState title="Applicants" message="Applicant counts show on each listing. A per-applicant review view ships next." action={{ label: "Browse the job board", href: "/jobs" }} />
+        <>
+          <DashboardHeader
+            title="Applicants"
+            subtitle="Everyone who applied to your listings. Open a resume or track review status."
+          />
+          <ApplicantsView />
+        </>
       ),
     },
   ];

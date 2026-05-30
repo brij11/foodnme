@@ -54,7 +54,9 @@ test.describe("employer dashboard (story-jobs-04)", () => {
 
     await page.goto("/dashboard/employer", { timeout: 60000 });
     await expect(page.getByText("Pilot Plant Lead")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText("Pending review")).toBeVisible();
+    // The job's status Tag (last occurrence — the stats grid also has a "Pending review" card label,
+    // story-jobs-14).
+    await expect(page.getByText("Pending review").last()).toBeVisible();
 
     await page.getByRole("button", { name: "Close" }).first().click();
     // Assert the close took effect at the source of truth (the PATCH route's client re-render is
