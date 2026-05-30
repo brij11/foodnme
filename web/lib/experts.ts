@@ -18,9 +18,18 @@ export const SPECIALIZATIONS = [
   "Snacks",
 ] as const;
 
+/** A single engagement option an expert offers (story-experts-08, stored as jsonb). */
+export type EngagementType = {
+  kind: "hourly" | "project" | "retainer";
+  title: string;
+  desc: string;
+  price: string;
+};
+
 /**
  * An expert as the listing cards need it. `contact_email` is deliberately absent — it is
  * server-only and never reaches the client (anti-harvesting, story-experts-02/03).
+ * `rating` / `review_count` / `response_time` are the directly-stored reputation fields (experts-08).
  */
 export type ExpertCardData = {
   id: string;
@@ -32,10 +41,13 @@ export type ExpertCardData = {
   location: string;
   is_available: boolean;
   is_featured: boolean;
+  rating: number | null;
+  review_count: number;
+  response_time: string | null;
 };
 
 const CARD_COLUMNS =
-  "id, full_name, title, avatar_url, specializations, hourly_rate, location, is_available, is_featured";
+  "id, full_name, title, avatar_url, specializations, hourly_rate, location, is_available, is_featured, rating, review_count, response_time";
 
 export type ExpertFilters = {
   q?: string;
@@ -82,10 +94,11 @@ export type ExpertDetail = ExpertCardData & {
   bio: string;
   experience_years: number;
   certifications: string[];
+  engagement_types: EngagementType[];
 };
 
 const DETAIL_COLUMNS =
-  "id, full_name, title, avatar_url, specializations, bio, experience_years, hourly_rate, certifications, location, is_available, is_featured";
+  "id, full_name, title, avatar_url, specializations, bio, experience_years, hourly_rate, certifications, location, is_available, is_featured, rating, review_count, response_time, engagement_types";
 
 /**
  * A single active expert by id for `/experts/[id]` (story-experts-02), or null if missing /

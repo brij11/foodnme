@@ -210,6 +210,7 @@ export type Database = {
           certifications: string[]
           contact_email: string
           created_at: string
+          engagement_types: Json
           experience_years: number
           full_name: string
           hourly_rate: number | null
@@ -218,6 +219,9 @@ export type Database = {
           is_featured: boolean
           linkedin_url: string | null
           location: string
+          rating: number | null
+          response_time: string | null
+          review_count: number
           search_vector: unknown
           specializations: string[]
           status: string
@@ -231,6 +235,7 @@ export type Database = {
           certifications?: string[]
           contact_email: string
           created_at?: string
+          engagement_types?: Json
           experience_years?: number
           full_name: string
           hourly_rate?: number | null
@@ -239,6 +244,9 @@ export type Database = {
           is_featured?: boolean
           linkedin_url?: string | null
           location?: string
+          rating?: number | null
+          response_time?: string | null
+          review_count?: number
           search_vector?: unknown
           specializations?: string[]
           status?: string
@@ -252,6 +260,7 @@ export type Database = {
           certifications?: string[]
           contact_email?: string
           created_at?: string
+          engagement_types?: Json
           experience_years?: number
           full_name?: string
           hourly_rate?: number | null
@@ -260,6 +269,9 @@ export type Database = {
           is_featured?: boolean
           linkedin_url?: string | null
           location?: string
+          rating?: number | null
+          response_time?: string | null
+          review_count?: number
           search_vector?: unknown
           specializations?: string[]
           status?: string
@@ -519,6 +531,7 @@ export type Database = {
         }[]
       }
       is_admin: { Args: { uid: string }; Returns: boolean }
+      valid_engagement_types: { Args: { p: Json }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

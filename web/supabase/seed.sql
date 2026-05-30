@@ -47,50 +47,67 @@ insert into resources (title, slug, description, category, file_url, file_type, 
 
 -- ───────────────────────── experts (experts-01) ─────────────────────────
 -- Ported from prototype data.jsx EXPERTS as status='active' (no linked user — directory seed).
--- `rate` strings (₹6,000/hr) become integer hourly_rate; rating/reviews dropped (no schema).
--- Seeded BEFORE articles so each article's `expert_id` author link resolves by full_name (blog-06).
--- linkedin_url/twitter_url (blog-06) given to a few experts; the author chip/bio card tolerate null.
-insert into experts (full_name, title, location, experience_years, hourly_rate, specializations, certifications, bio, contact_email, is_available, is_featured, status, linkedin_url, twitter_url) values
+-- `rate` strings (₹6,000/hr) become integer hourly_rate. Seeded BEFORE articles so each article's
+-- `expert_id` author link resolves by full_name (blog-06). linkedin_url/twitter_url (blog-06) given
+-- to a few; rating/review_count/response_time/engagement_types are the experts-08 fields (the
+-- hourly engagement price mirrors hourly_rate; project/retainer prices are the prototype copy).
+insert into experts (full_name, title, location, experience_years, hourly_rate, specializations, certifications, bio, contact_email, is_available, is_featured, status, linkedin_url, twitter_url, rating, review_count, response_time, engagement_types) values
 ('Dr. Aarti Menon', 'FSSAI Lead Auditor', 'Mumbai · India', 12, 6000,
  '{"Food Safety","HACCP","Auditing"}', '{"FSSAI Auditor","FSSC 22000 Lead Auditor","PhD Food Tech"}',
  'Twelve years auditing and implementing food safety systems for Indian food businesses. Trainer at NIFTEM workshops.',
  'aarti.menon@expert.foodnme.test', true, true, 'active',
- 'https://www.linkedin.com/in/aarti-menon', 'https://twitter.com/aartimenon'),
+ 'https://www.linkedin.com/in/aarti-menon', 'https://twitter.com/aartimenon',
+ 4.9, 38, '< 24 hours',
+ '[{"kind":"hourly","title":"Hourly consult","desc":"30-60 min calls for specific questions.","price":"₹6,000/hr"},{"kind":"project","title":"Project engagement","desc":"Defined scope, 2-6 week timeline.","price":"Project-based"},{"kind":"retainer","title":"Retainer","desc":"Ongoing support, 4-20 hrs/month.","price":"From ₹40,000/mo"}]'::jsonb),
 ('Vikram Shah', 'Regulatory Affairs Consultant', 'Delhi NCR · India', 9, 4500,
  '{"Regulatory Compliance","Labeling","Nutraceuticals"}', '{"MSc Food Tech","FSSAI Trainer"}',
  'Specializes in FSSAI licensing, nutraceutical compliance, and labeling reviews across India.',
  'vikram.shah@expert.foodnme.test', true, false, 'active',
- 'https://www.linkedin.com/in/vikram-shah', null),
+ 'https://www.linkedin.com/in/vikram-shah', null,
+ 4.8, 27, '< 24 hours',
+ '[{"kind":"hourly","title":"Hourly consult","desc":"30-60 min calls for specific questions.","price":"₹4,500/hr"},{"kind":"project","title":"Project engagement","desc":"Defined scope, 2-6 week timeline.","price":"Project-based"},{"kind":"retainer","title":"Retainer","desc":"Ongoing support, 4-20 hrs/month.","price":"From ₹40,000/mo"}]'::jsonb),
 ('Priya Iyer', 'QC Manager · Dairy', 'Anand, Gujarat', 14, 5500,
  '{"Quality Control","Dairy","Sensory Analysis"}', '{"BSc + MSc Food Tech","Six Sigma Black Belt"}',
  'Quality Control lead with deep experience in dairy. Shelf-life testing, sampling plans, and incoming-material inspection.',
  'priya.iyer@expert.foodnme.test', false, false, 'active',
- 'https://www.linkedin.com/in/priya-iyer', null),
+ 'https://www.linkedin.com/in/priya-iyer', null,
+ 4.9, 42, '1-2 days',
+ '[{"kind":"hourly","title":"Hourly consult","desc":"30-60 min calls for specific questions.","price":"₹5,500/hr"},{"kind":"project","title":"Project engagement","desc":"Defined scope, 2-6 week timeline.","price":"Project-based"},{"kind":"retainer","title":"Retainer","desc":"Ongoing support, 4-20 hrs/month.","price":"From ₹40,000/mo"}]'::jsonb),
 ('Devansh Roy', 'Process Engineer', 'Pune, Maharashtra', 8, 4800,
  '{"Process Engineering","Product Development","Snacks"}', '{"BTech Food Engineering","Extrusion Specialist"}',
  'Process engineer with 8 years on extrusion, thermal, and aseptic lines. Helps food businesses scale up without sacrificing margins.',
  'devansh.roy@expert.foodnme.test', true, false, 'active',
- null, null),
+ null, null,
+ 4.7, 19, '< 24 hours',
+ '[{"kind":"hourly","title":"Hourly consult","desc":"30-60 min calls for specific questions.","price":"₹4,800/hr"},{"kind":"project","title":"Project engagement","desc":"Defined scope, 2-6 week timeline.","price":"Project-based"},{"kind":"retainer","title":"Retainer","desc":"Ongoing support, 4-20 hrs/month.","price":"From ₹40,000/mo"}]'::jsonb),
 ('Naina Kapoor', 'Industry Analyst & Strategy', 'Bengaluru · India', 6, 3800,
  '{"Strategy","Market Research","Nutraceuticals"}', '{"MBA · IIM","Food Tech Researcher"}',
  'Covers Indian food-tech investment, market structure, and category trends. Previously at a leading consumer-sector research firm.',
  'naina.kapoor@expert.foodnme.test', true, false, 'active',
- 'https://www.linkedin.com/in/naina-kapoor', 'https://twitter.com/nainakapoor'),
+ 'https://www.linkedin.com/in/naina-kapoor', 'https://twitter.com/nainakapoor',
+ 4.6, 14, '< 24 hours',
+ '[{"kind":"hourly","title":"Hourly consult","desc":"30-60 min calls for specific questions.","price":"₹3,800/hr"},{"kind":"project","title":"Project engagement","desc":"Defined scope, 2-6 week timeline.","price":"Project-based"},{"kind":"retainer","title":"Retainer","desc":"Ongoing support, 4-20 hrs/month.","price":"From ₹40,000/mo"}]'::jsonb),
 ('Rohan Pillai', 'Sensory Scientist', 'Chennai, Tamil Nadu', 10, 5000,
  '{"Sensory Analysis","Product Development","Beverages"}', '{"MSc Food Tech","Certified Sensory Panel Leader"}',
  'Sensory scientist working with beverage and savory brands. Panel design, descriptive analysis, and consumer testing.',
  'rohan.pillai@expert.foodnme.test', true, false, 'active',
- null, null),
+ null, null,
+ 4.8, 22, '< 24 hours',
+ '[{"kind":"hourly","title":"Hourly consult","desc":"30-60 min calls for specific questions.","price":"₹5,000/hr"},{"kind":"project","title":"Project engagement","desc":"Defined scope, 2-6 week timeline.","price":"Project-based"},{"kind":"retainer","title":"Retainer","desc":"Ongoing support, 4-20 hrs/month.","price":"From ₹40,000/mo"}]'::jsonb),
 ('Meera Banerjee', 'Nutrition & Labeling Consultant', 'Kolkata · West Bengal', 11, 4200,
  '{"Labeling","Nutraceuticals","Regulatory Compliance"}', '{"MSc Nutrition","FSSAI Trainer"}',
  'Nutrition and labeling expert. Pre-print label reviews, claim substantiation, and front-of-pack compliance.',
  'meera.banerjee@expert.foodnme.test', true, true, 'active',
- 'https://www.linkedin.com/in/meera-banerjee', null),
+ 'https://www.linkedin.com/in/meera-banerjee', null,
+ 4.9, 31, '< 24 hours',
+ '[{"kind":"hourly","title":"Hourly consult","desc":"30-60 min calls for specific questions.","price":"₹4,200/hr"},{"kind":"project","title":"Project engagement","desc":"Defined scope, 2-6 week timeline.","price":"Project-based"},{"kind":"retainer","title":"Retainer","desc":"Ongoing support, 4-20 hrs/month.","price":"From ₹40,000/mo"}]'::jsonb),
 ('Karthik Subramanian', 'Plant Operations Consultant', 'Hyderabad · India', 15, 6500,
  '{"Process Engineering","Bakery","Auditing"}', '{"BTech + MTech","GFSI Trained"}',
  'Plant operations and turnaround specialist. Helps mid-sized food manufacturers improve OEE and pass audits the first time.',
  'karthik.subramanian@expert.foodnme.test', false, false, 'active',
- null, null);
+ null, null,
+ 4.8, 36, '2-3 days',
+ '[{"kind":"hourly","title":"Hourly consult","desc":"30-60 min calls for specific questions.","price":"₹6,500/hr"},{"kind":"project","title":"Project engagement","desc":"Defined scope, 2-6 week timeline.","price":"Project-based"},{"kind":"retainer","title":"Retainer","desc":"Ongoing support, 4-20 hrs/month.","price":"From ₹40,000/mo"}]'::jsonb);
 
 -- ───────────────────────── articles (blog-01) ─────────────────────────
 -- author identity is the linked expert (blog-06/OQ#9): expert_id resolves by full_name from the
