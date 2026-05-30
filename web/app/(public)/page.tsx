@@ -5,8 +5,12 @@ import { Hero } from "@/components/home/Hero";
 import { ValueStrip } from "@/components/home/ValueStrip";
 import { Scenarios } from "@/components/home/Scenarios";
 import { KnowledgeHubSection } from "@/components/home/KnowledgeHubSection";
+import { EditorialFeature } from "@/components/home/EditorialFeature";
 import { LatestArticlesRail } from "@/components/home/LatestArticlesRail";
+import { Testimonials } from "@/components/home/Testimonials";
+import { HomeStats } from "@/components/home/HomeStats";
 import { FinalCta } from "@/components/home/FinalCta";
+import { GoodToKnow } from "@/components/home/GoodToKnow";
 
 /**
  * Homepage — the narrative arc of UI-DESIGN-HANDOFF.md §3.6, built across stories
@@ -60,20 +64,25 @@ export default async function HomePage() {
       {/* §3.6 #3 */}
       <Scenarios />
 
-      {/* §3.6 #4 — editorial feature (homepage-06) + latest rail (homepage-04) mount here */}
+      {/* §3.6 #4 — editorial feature (homepage-06) + latest rail (homepage-04) */}
       <KnowledgeHubSection>
-        {/* Editorial feature (story-homepage-06) mounts above the rail */}
+        <EditorialFeature article={featured} />
         <LatestArticlesRail articles={latestArticles} />
       </KnowledgeHubSection>
 
-      {/* §3.6 #5 Testimonials, #6 Stats row — homepage-06 */}
+      {/* §3.6 #5 */}
+      <Testimonials />
+
+      {/* §3.6 #6 */}
+      <HomeStats stats={stats} />
 
       {/* §3.6 #7 Featured this week — homepage-07 */}
 
       {/* §3.6 #8 */}
       <FinalCta />
 
-      {/* §3.6 #9 Good to know (Q&A) — homepage-06 */}
+      {/* §3.6 #9 */}
+      <GoodToKnow />
 
       {/* §3.6 #10 Newsletter — homepage-07 */}
     </>

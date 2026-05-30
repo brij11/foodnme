@@ -147,11 +147,24 @@ export async function getLatestArticles(opts: {
  * "Latest from the blog" rail (story-homepage-04): the shell fetches it once, the feature
  * renders it, and the rail excludes its slug so no article appears twice.
  *
- * Currently returns the most-recent published article. story-homepage-06 will extend this
- * to prefer an explicitly-featured article (`articles.is_featured`), falling back to
- * most-recent — at which point the rail exclusion still holds because both read this helper.
+ * Selection (§4.2): `is_featured AND is_published ORDER BY published_at desc LIMIT 1`,
+ * falling back to the most-recent published article when nothing is flagged.
  */
 export async function getFeaturedArticle(): Promise<ArticleListItem | null> {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("articles")
+    .select(LIST_COLUMNS)
+    .eq("is_published", true)
+    .eq("is_featured", true)
+    .order("published_at", { ascending: false })
+    .limit(1);
+  if (error) throw new Error(`getFeaturedArticle failed: ${error.message}`);
+
+  const flagged = ((data as RawListRow[] | null) ?? [])[0];
+  if (flagged) return mapListItem(flagged);
+
+  // Fallback: nothing flagged → most-recent published.
   const [latest] = await getLatestArticles({ limit: 1 });
   return latest ?? null;
 }

@@ -37,6 +37,23 @@ test.describe("public layout + homepage (homepage-02)", () => {
     }
   });
 
+  test("mid-page editorial feature + Good-to-know render (homepage-06)", async ({ page }) => {
+    await page.goto("/");
+    // Editorial feature: a "Featured" article card linking to a /blog article, title is an H2.
+    await expect(page.getByText("Featured", { exact: true })).toBeVisible();
+    // Stats row labels.
+    await expect(page.getByText("Articles Published")).toBeVisible();
+    await expect(page.getByText("Consultations Done")).toBeVisible();
+    // Good to know Q&A + About link.
+    await expect(
+      page.getByRole("heading", { name: /A few things about how foodnme works/ }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: /Read the full About page/ })).toHaveAttribute(
+      "href",
+      "/about",
+    );
+  });
+
   test("skip-to-content link reveals on focus (AC#10)", async ({ page }) => {
     await page.goto("/");
     await page.keyboard.press("Tab");

@@ -223,6 +223,12 @@ Burn marks and inconsistent expansion usually point back to screw configuration 
 update articles set related_resource_slug = 'haccp-team-charter'
  where slug = 'haccp-implementation-small-food-businesses';
 
+-- ───────────────────────── editorial feature (story-homepage-06) ─────────────────────────
+-- Flag the HACCP rollout piece as the admin-curated homepage editorial feature (§3.6 #4).
+-- The "Latest from the blog" rail (story-homepage-04) excludes it so it never appears twice.
+update articles set is_featured = true
+ where slug = 'haccp-implementation-small-food-businesses';
+
 -- ───────────────────────── jobs (jobs-01) ─────────────────────────
 -- Ported from prototype data.jsx JOBS as status='active' (no employer — board seed). The
 -- rendering-only `remote`/`company_initial`/`posted`/`applications` fields are dropped; the

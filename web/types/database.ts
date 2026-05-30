@@ -143,6 +143,7 @@ export type Database = {
           excerpt: string
           expert_id: string
           id: string
+          is_featured: boolean
           is_published: boolean
           published_at: string | null
           read_time_mins: number
@@ -160,6 +161,7 @@ export type Database = {
           excerpt?: string
           expert_id: string
           id?: string
+          is_featured?: boolean
           is_published?: boolean
           published_at?: string | null
           read_time_mins?: number
@@ -177,6 +179,7 @@ export type Database = {
           excerpt?: string
           expert_id?: string
           id?: string
+          is_featured?: boolean
           is_published?: boolean
           published_at?: string | null
           read_time_mins?: number

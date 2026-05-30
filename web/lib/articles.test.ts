@@ -218,16 +218,34 @@ describe("getLatestArticles (story-homepage-04/05)", () => {
 describe("getFeaturedArticle (story-homepage-04/06)", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("returns the single most-recent published article", async () => {
+  it("prefers an explicitly-featured article (is_featured AND is_published)", async () => {
+    // First query (is_featured) returns the flagged article → no fallback query needed.
     vi.mocked(createClient).mockReturnValue(
-      clientWithQueue([{ data: [{ slug: "newest" }], error: null }]),
+      clientWithQueue([{ data: [{ slug: "flagged" }], error: null }]),
+    );
+    const out = await getFeaturedArticle();
+    expect(out?.slug).toBe("flagged");
+  });
+
+  it("falls back to the most-recent published article when none is flagged", async () => {
+    // First query (is_featured) empty → second query (most-recent) returns the latest.
+    vi.mocked(createClient).mockReturnValue(
+      clientWithQueue([
+        { data: [], error: null },
+        { data: [{ slug: "newest" }], error: null },
+      ]),
     );
     const out = await getFeaturedArticle();
     expect(out?.slug).toBe("newest");
   });
 
   it("returns null when no published articles exist", async () => {
-    vi.mocked(createClient).mockReturnValue(clientWithQueue([{ data: [], error: null }]));
+    vi.mocked(createClient).mockReturnValue(
+      clientWithQueue([
+        { data: [], error: null },
+        { data: [], error: null },
+      ]),
+    );
     expect(await getFeaturedArticle()).toBeNull();
   });
 });
