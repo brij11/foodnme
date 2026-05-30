@@ -12,6 +12,10 @@ export const jobSchema = z
     salary_max: z.coerce.number().int().min(0).max(100000000).nullable().optional(),
     experience_level: z.enum(EXPERIENCE_LEVELS),
     description: z.string().trim().min(50, "Describe the role — at least 50 characters."),
+    // Structured fields (story-jobs-09) — optional + back-compatible with description-only posts.
+    responsibilities: z.array(z.string().trim().min(1)).max(20).optional().default([]),
+    requirements: z.array(z.string().trim().min(1)).max(20).optional().default([]),
+    is_featured: z.boolean().optional().default(false),
     skills: z.array(z.string().trim().min(1)).max(20),
     expires_at: z.coerce.date(),
     turnstile_token: z.string().min(1, "Verification required."),

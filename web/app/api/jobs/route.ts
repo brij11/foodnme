@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
       salary_max: parsed.data.salary_max ?? null,
       experience_level: parsed.data.experience_level,
       description: parsed.data.description,
+      responsibilities: parsed.data.responsibilities,
+      requirements: parsed.data.requirements,
       skills: parsed.data.skills,
       expires_at: parsed.data.expires_at.toISOString(),
       status: "pending",

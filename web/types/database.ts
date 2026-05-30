@@ -349,8 +349,11 @@ export type Database = {
           experience_level: string
           expires_at: string | null
           id: string
+          is_featured: boolean
           job_type: string
           location: string
+          requirements: string[]
+          responsibilities: string[]
           salary_max: number | null
           salary_min: number | null
           skills: string[]
@@ -365,8 +368,11 @@ export type Database = {
           experience_level: string
           expires_at?: string | null
           id?: string
+          is_featured?: boolean
           job_type: string
           location?: string
+          requirements?: string[]
+          responsibilities?: string[]
           salary_max?: number | null
           salary_min?: number | null
           skills?: string[]
@@ -381,8 +387,11 @@ export type Database = {
           experience_level?: string
           expires_at?: string | null
           id?: string
+          is_featured?: boolean
           job_type?: string
           location?: string
+          requirements?: string[]
+          responsibilities?: string[]
           salary_max?: number | null
           salary_min?: number | null
           skills?: string[]

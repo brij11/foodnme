@@ -14,17 +14,20 @@ export type JobCardData = {
   salary_max: number | null;
   experience_level: string;
   skills: string[];
+  is_featured: boolean;
 };
 
 export type JobDetail = JobCardData & {
   description: string;
+  responsibilities: string[];
+  requirements: string[];
   created_at: string;
   expires_at: string | null;
 };
 
 const CARD_COLUMNS =
-  "id, title, company_name, location, job_type, salary_min, salary_max, experience_level, skills";
-const DETAIL_COLUMNS = `${CARD_COLUMNS}, description, created_at, expires_at`;
+  "id, title, company_name, location, job_type, salary_min, salary_max, experience_level, skills, is_featured";
+const DETAIL_COLUMNS = `${CARD_COLUMNS}, description, responsibilities, requirements, created_at, expires_at`;
 
 export type JobFilters = {
   q?: string;

@@ -227,28 +227,50 @@ update articles set related_resource_slug = 'haccp-team-charter'
 -- Ported from prototype data.jsx JOBS as status='active' (no employer — board seed). The
 -- rendering-only `remote`/`company_initial`/`posted`/`applications` fields are dropped; the
 -- card derives the company initial from company_name. expires_at set well into the future.
-insert into jobs (title, company_name, location, job_type, salary_min, salary_max, experience_level, description, skills, status, expires_at) values
+-- responsibilities/requirements/is_featured are the structured fields (jobs-09).
+insert into jobs (title, company_name, location, job_type, salary_min, salary_max, experience_level, description, skills, status, expires_at, responsibilities, requirements, is_featured) values
 ('Quality Assurance Manager', 'Amul Foods', 'Anand, Gujarat', 'Full-time', 1200000, 1800000, 'Senior',
  'Lead QA across two dairy lines (UHT milk and ice-cream). Own HACCP, GMP, and supplier qualification programs.',
- '{"HACCP","FSSAI","ISO 22000","Dairy"}', 'active', now() + interval '60 days'),
+ '{"HACCP","FSSAI","ISO 22000","Dairy"}', 'active', now() + interval '60 days',
+ '{"Own the HACCP and GMP programs across both dairy lines","Lead supplier qualification and incoming-material approval","Prepare and host third-party and regulatory audits"}',
+ '{"8+ years in dairy QA with a food-tech degree","Lead-auditor training (FSSC 22000 or ISO 22000)","Hands-on HACCP plan authoring and verification"}',
+ true),
 ('Food Safety Auditor (Third-party)', 'TÜV India', 'Mumbai · Remote OK', 'Full-time', 900000, 1400000, 'Mid-level',
  'Conduct on-site audits across FSSC 22000, BRC, and SQF schemes. Heavy travel (40-50%).',
- '{"Auditing","FSSC 22000","BRC"}', 'active', now() + interval '60 days'),
+ '{"Auditing","FSSC 22000","BRC"}', 'active', now() + interval '60 days',
+ '{"Conduct on-site certification audits across multiple schemes","Write defensible findings and corrective-action reports","Maintain scheme competencies and witnessed-audit records"}',
+ '{"Approved auditor status for FSSC 22000 or BRC","Willingness to travel 40-50%","Strong report-writing in English"}',
+ false),
 ('R&D Food Technologist', 'ITC Foods', 'Bengaluru, Karnataka', 'Full-time', 700000, 1100000, 'Mid-level',
  'New product development for the snacks and biscuits portfolio. Formulation, sensory, and pilot-scale trials.',
- '{"NPD","Formulation","Sensory","Snacks"}', 'active', now() + interval '60 days'),
+ '{"NPD","Formulation","Sensory","Snacks"}', 'active', now() + interval '60 days',
+ '{"Develop and optimize formulations for snacks and biscuits","Run sensory panels and pilot-scale trials","Document specs and hand off to scale-up"}',
+ '{"MSc Food Technology or equivalent","2-5 years in NPD for packaged foods","Sensory evaluation experience"}',
+ false),
 ('Regulatory Affairs Specialist', 'Hindustan Unilever', 'Gurugram, Haryana', 'Full-time', 1000000, 1500000, 'Senior',
  'Manage FSSAI submissions and labeling reviews for the nutraceuticals and packaged foods portfolio.',
- '{"FSSAI","Labeling","Nutraceuticals"}', 'active', now() + interval '60 days'),
+ '{"FSSAI","Labeling","Nutraceuticals"}', 'active', now() + interval '60 days',
+ '{"Own FSSAI license applications and renewals","Review labels and claims for compliance","Track regulatory change and brief the business"}',
+ '{"6+ years in regulatory affairs for food/nutraceuticals","Deep FSSAI labeling knowledge","Detail-oriented documentation discipline"}',
+ true),
 ('Production Supervisor — Bakery', 'Britannia Industries', 'Hyderabad, Telangana', 'Full-time', 500000, 750000, 'Mid-level',
  'Shift supervision on a high-speed biscuit line. GMP, line efficiency, and SOP adherence.',
- '{"Production","GMP","Bakery"}', 'active', now() + interval '60 days'),
+ '{"Production","GMP","Bakery"}', 'active', now() + interval '60 days',
+ '{"Supervise a shift on a high-speed biscuit line","Drive GMP, line efficiency, and SOP adherence","Coordinate changeovers and downtime recovery"}',
+ '{"3+ years supervising bakery/biscuit production","Working knowledge of GMP","Comfortable on a 24x7 shift roster"}',
+ false),
 ('QC Microbiologist', 'Mother Dairy', 'Delhi NCR', 'Full-time', 450000, 650000, 'Entry-level',
  'Daily micro testing on incoming milk, in-process, and finished product. Method validation and report-out.',
- '{"Microbiology","QC","Method Validation"}', 'active', now() + interval '60 days'),
+ '{"Microbiology","QC","Method Validation"}', 'active', now() + interval '60 days',
+ '{"Run daily micro testing on milk and finished product","Support method validation and proficiency testing","Report out-of-spec results and trends"}',
+ '{"BSc/MSc Microbiology","0-2 years in a food/dairy lab","Aseptic technique and good lab documentation"}',
+ false),
 ('Compliance Consultant (Contract)', 'Independent', 'Pan-India · Remote', 'Contract', 80000, 150000, 'Senior',
  '3-6 month engagements supporting growing F&B brands through FSSAI Tier-2 license upgrades and audits.',
- '{"FSSAI","Consulting","Audit Prep"}', 'active', now() + interval '60 days');
+ '{"FSSAI","Consulting","Audit Prep"}', 'active', now() + interval '60 days',
+ '{"Scope and run FSSAI Tier-2 upgrade engagements","Prepare brands for third-party audits","Coach in-house teams on sustainable compliance"}',
+ '{"Proven FSSAI consulting track record","Comfortable working independently, remote","Strong client-facing communication"}',
+ false);
 
 -- ───────────────────────── founder admin flag (auth-05) ─────────────────────────
 -- Idempotent: promotes the founder's profile to admin once that account exists. No-op on a
