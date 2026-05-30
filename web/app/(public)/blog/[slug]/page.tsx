@@ -8,6 +8,8 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { ArticleBody } from "@/components/blog/ArticleBody";
 import { ArticleTemplateCTA } from "@/components/blog/ArticleTemplateCTA";
 import { RelatedArticles } from "@/components/blog/RelatedArticles";
+import { AuthorChip } from "@/components/blog/AuthorChip";
+import { AuthorBioCard } from "@/components/blog/AuthorBioCard";
 import { Tag } from "@/components/ui/Tag";
 import { Icon } from "@/components/ui/Icon";
 import { NewsletterBanner } from "@/components/newsletter/NewsletterBanner";
@@ -19,13 +21,6 @@ export async function generateStaticParams() {
   return slugs.map((slug) => ({ slug }));
 }
 export const dynamicParams = true;
-
-function formatDate(iso: string | null): string {
-  if (!iso) return "";
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "2-digit", year: "numeric" }).format(
-    new Date(iso),
-  );
-}
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const article = await getArticleBySlug(params.slug);
@@ -69,13 +64,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
         <h1 className="font-display text-[clamp(2rem,4vw,2.5rem)] font-bold leading-[1.1] tracking-[-0.03em] text-text">
           {article.title}
         </h1>
-        <div className="mt-4 flex flex-wrap items-center gap-2 font-body text-[0.85rem] text-muted">
-          <span className="font-medium text-text">{article.author_name}</span>
-          <span aria-hidden>·</span>
-          <span>{formatDate(article.published_at)}</span>
-          <span aria-hidden>·</span>
-          <span>{article.read_time_mins} min read</span>
-        </div>
+        <AuthorChip author={article.author} publishedAt={article.published_at} />
       </div>
 
       {article.cover_image_url ? (
@@ -106,6 +95,8 @@ export default async function ArticlePage({ params }: { params: { slug: string }
           ))}
         </div>
       ) : null}
+
+      <AuthorBioCard author={article.author} articleCount={article.author_article_count} />
 
       <RelatedArticles articles={relatedArticles} />
 

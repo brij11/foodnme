@@ -62,5 +62,9 @@ test.describe("Article author (story-blog-06)", () => {
     ).toBeVisible();
     // Author identity comes from the joined expert (Dr. Aarti Menon), not free-text author_name.
     await expect(page.getByText("Dr. Aarti Menon").first()).toBeVisible();
+    // story-blog-07: header chip social link + end-of-article bio card render from the expert.
+    await expect(page.getByRole("link", { name: /Aarti Menon on LinkedIn/ }).first()).toBeVisible();
+    await expect(page.getByText("About the author")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Dr. Aarti Menon" })).toBeVisible();
   });
 });
