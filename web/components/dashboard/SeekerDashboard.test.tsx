@@ -17,6 +17,7 @@ function renderDash(overrides: Partial<SeekerStats> = {}) {
       applications={[]}
       activeFilter="all"
       stats={{ ...stats, ...overrides }}
+      savedJobs={[]}
     />,
   );
 }

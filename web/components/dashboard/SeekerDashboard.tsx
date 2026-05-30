@@ -21,6 +21,8 @@ export type SeekerStats = {
   saved: number;
 };
 
+export type SavedJob = { id: string; title: string; company_name: string; location: string };
+
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="rounded-lg border border-border bg-card-bg p-5">
@@ -51,11 +53,13 @@ export function SeekerDashboard({
   applications,
   activeFilter,
   stats,
+  savedJobs,
 }: {
   fullName: string;
   applications: ApplicationRow[];
   activeFilter: string;
   stats: SeekerStats;
+  savedJobs: SavedJob[];
 }) {
   const firstName = fullName.trim().split(/\s+/)[0] || "there";
 
@@ -136,9 +140,38 @@ export function SeekerDashboard({
       id: "saved",
       label: "Saved jobs",
       icon: "bookmark",
-      render: () => (
-        <EmptyState title="No saved jobs" message="Save roles you're interested in to revisit them later." action={{ label: "Browse jobs", href: "/jobs" }} />
-      ),
+      render: () =>
+        savedJobs.length === 0 ? (
+          <EmptyState title="No saved jobs" message="Save roles you're interested in to revisit them later." action={{ label: "Browse jobs", href: "/jobs" }} />
+        ) : (
+          <>
+            <DashboardHeader title="Saved jobs" subtitle="Roles you bookmarked to apply to later." />
+            <ul className="flex flex-col gap-3" data-testid="saved-jobs-list">
+              {savedJobs.map((j) => (
+                <li
+                  key={j.id}
+                  data-testid="saved-job-row"
+                  className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card-bg px-5 py-4"
+                >
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/jobs/${j.id}`} className="font-heading text-[0.98rem] font-bold text-text hover:text-primary">
+                      {j.title}
+                    </Link>
+                    <p className="mt-0.5 font-body text-[0.78rem] text-muted">
+                      {j.company_name} · {j.location}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/jobs/${j.id}`}
+                    className="rounded-md bg-primary px-4 py-2 font-heading text-[0.78rem] font-bold text-white transition hover:bg-primary-deep"
+                  >
+                    View &amp; apply
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </>
+        ),
     },
   ];
 

@@ -5,6 +5,7 @@ import {
   SeekerDashboard,
   type ApplicationRow,
   type SeekerStats,
+  type SavedJob,
 } from "@/components/dashboard/SeekerDashboard";
 
 export const dynamic = "force-dynamic";
@@ -58,7 +59,26 @@ export default async function SeekerDashboardPage({
     else if (r.status === "reviewed") stats.reviewed += 1;
     else if (r.status === "rejected") stats.rejected += 1;
   }
-  // saved stays 0 until the saved-jobs feature (story-jobs-15) lands a saved_items table.
+  // Saved jobs (story-jobs-15): own saved_items via RLS, then the job rows (service role so a
+  // since-closed saved job still renders its title).
+  const { data: savedRows } = await supabase
+    .from("saved_items")
+    .select("item_id, saved_at")
+    .eq("item_type", "job")
+    .order("saved_at", { ascending: false });
+  const savedIds = ((savedRows as { item_id: string }[] | null) ?? []).map((r) => r.item_id);
+  stats.saved = savedIds.length;
+
+  let savedJobs: SavedJob[] = [];
+  if (savedIds.length > 0) {
+    const { data: sj } = await svc
+      .from("jobs")
+      .select("id, title, company_name, location")
+      .in("id", savedIds);
+    const byId = new Map((sj as SavedJob[] | null)?.map((j) => [j.id, j]) ?? []);
+    // Preserve saved-at ordering.
+    savedJobs = savedIds.map((id) => byId.get(id)).filter((j): j is SavedJob => Boolean(j));
+  }
 
   return (
     <SeekerDashboard
@@ -66,6 +86,7 @@ export default async function SeekerDashboardPage({
       applications={applications}
       activeFilter={filter}
       stats={stats}
+      savedJobs={savedJobs}
     />
   );
 }

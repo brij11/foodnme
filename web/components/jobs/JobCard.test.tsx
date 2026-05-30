@@ -1,5 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+
+// JobCard now embeds the SaveButton island (story-jobs-15) → mock its router + supabase deps.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
+vi.mock("@/lib/supabase/client", () => ({
+  createClient: () => ({ auth: { getUser: async () => ({ data: { user: null } }) } }),
+}));
+
 import { JobCard } from "./JobCard";
 import type { JobCardData } from "@/lib/jobs";
 

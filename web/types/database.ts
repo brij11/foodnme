@@ -514,6 +514,45 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_items: {
+        Row: {
+          id: string
+          item_id: string
+          item_type: string
+          saved_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          item_id: string
+          item_type: string
+          saved_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          item_id?: string
+          item_type?: string
+          saved_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_inquiries: {
         Row: {
           company_name: string

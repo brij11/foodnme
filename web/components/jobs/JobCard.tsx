@@ -3,8 +3,9 @@ import { Card } from "@/components/ui/Card";
 import { Tag } from "@/components/ui/Tag";
 import { Icon } from "@/components/ui/Icon";
 import { type JobCardData, companyInitial, formatSalary, formatPostedDate } from "@/lib/jobs";
+import { SaveButton } from "./SaveButton";
 
-/** Jobs board card (story-jobs-01, enriched story-jobs-10). */
+/** Jobs board card (story-jobs-01, enriched story-jobs-10, save control story-jobs-15). */
 export function JobCard({ job }: { job: JobCardData }) {
   return (
     <Card hover data-testid="job-card" className="flex h-full flex-col gap-3.5">
@@ -22,11 +23,10 @@ export function JobCard({ job }: { job: JobCardData }) {
             {job.applicant_count === 1 ? "applicant" : "applicants"}
           </p>
         </div>
-        {job.is_featured ? (
-          <Tag variant="accent" className="ml-auto shrink-0">
-            Featured
-          </Tag>
-        ) : null}
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {job.is_featured ? <Tag variant="accent">Featured</Tag> : null}
+          <SaveButton jobId={job.id} variant="card" />
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 font-body text-[0.78rem] text-muted">

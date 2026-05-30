@@ -7,6 +7,7 @@ import { Tag } from "@/components/ui/Tag";
 import { Icon } from "@/components/ui/Icon";
 import { ApplyButton } from "@/components/jobs/ApplyButton";
 import { JobCard } from "@/components/jobs/JobCard";
+import { SaveButton } from "@/components/jobs/SaveButton";
 
 /** "What you'll do" / "Who we're looking for" check-listed section (story-jobs-11). */
 function CheckList({ title, items }: { title: string; items: string[] }) {
@@ -121,8 +122,9 @@ export default async function JobDetailPage({ params }: { params: { id: string }
             {formatSalary(job.salary_min, job.salary_max)}
           </div>
           <p className="mt-1 font-body text-[0.78rem] text-muted">per year</p>
-          <div className="mt-5">
+          <div className="mt-5 flex flex-col gap-2">
             <ApplyButton jobId={job.id} jobTitle={job.title} role={role} alreadyApplied={alreadyApplied} />
+            <SaveButton jobId={job.id} variant="detail" />
           </div>
 
           <ul className="mt-6 flex flex-col gap-2.5 border-t border-border pt-5 font-body text-[0.84rem]">
