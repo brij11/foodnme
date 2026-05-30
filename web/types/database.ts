@@ -342,6 +342,7 @@ export type Database = {
       }
       jobs: {
         Row: {
+          applicant_count: number
           company_name: string
           created_at: string
           description: string
@@ -361,6 +362,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          applicant_count?: number
           company_name: string
           created_at?: string
           description?: string
@@ -380,6 +382,7 @@ export type Database = {
           title: string
         }
         Update: {
+          applicant_count?: number
           company_name?: string
           created_at?: string
           description?: string

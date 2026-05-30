@@ -2,9 +2,9 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Tag } from "@/components/ui/Tag";
 import { Icon } from "@/components/ui/Icon";
-import { type JobCardData, companyInitial, formatSalary } from "@/lib/jobs";
+import { type JobCardData, companyInitial, formatSalary, formatPostedDate } from "@/lib/jobs";
 
-/** Jobs board card (story-jobs-01). */
+/** Jobs board card (story-jobs-01, enriched story-jobs-10). */
 export function JobCard({ job }: { job: JobCardData }) {
   return (
     <Card hover data-testid="job-card" className="flex h-full flex-col gap-3.5">
@@ -17,7 +17,16 @@ export function JobCard({ job }: { job: JobCardData }) {
             {job.title}
           </h3>
           <p className="mt-0.5 font-body text-[0.86rem] text-muted">{job.company_name}</p>
+          <p className="mt-0.5 font-body text-[0.74rem] text-muted" data-testid="job-meta">
+            {formatPostedDate(job.created_at)} · {job.applicant_count}{" "}
+            {job.applicant_count === 1 ? "applicant" : "applicants"}
+          </p>
         </div>
+        {job.is_featured ? (
+          <Tag variant="accent" className="ml-auto shrink-0">
+            Featured
+          </Tag>
+        ) : null}
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 font-body text-[0.78rem] text-muted">
@@ -27,7 +36,14 @@ export function JobCard({ job }: { job: JobCardData }) {
         <span className="flex items-center gap-1.5">
           <Icon name="briefcase" size={13} stroke={1.8} /> {job.job_type}
         </span>
+        <span className="flex items-center gap-1.5">
+          <Icon name="trending" size={13} stroke={1.8} /> {job.experience_level}
+        </span>
       </div>
+
+      <p className="line-clamp-2 font-body text-[0.86rem] leading-relaxed text-muted">
+        {job.description}
+      </p>
 
       <div className="flex flex-wrap gap-1.5">
         {job.skills.slice(0, 3).map((s) => (

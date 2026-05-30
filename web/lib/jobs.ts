@@ -15,19 +15,20 @@ export type JobCardData = {
   experience_level: string;
   skills: string[];
   is_featured: boolean;
+  description: string;
+  applicant_count: number;
+  created_at: string;
 };
 
 export type JobDetail = JobCardData & {
-  description: string;
   responsibilities: string[];
   requirements: string[];
-  created_at: string;
   expires_at: string | null;
 };
 
 const CARD_COLUMNS =
-  "id, title, company_name, location, job_type, salary_min, salary_max, experience_level, skills, is_featured";
-const DETAIL_COLUMNS = `${CARD_COLUMNS}, description, responsibilities, requirements, created_at, expires_at`;
+  "id, title, company_name, location, job_type, salary_min, salary_max, experience_level, skills, is_featured, description, applicant_count, created_at";
+const DETAIL_COLUMNS = `${CARD_COLUMNS}, responsibilities, requirements, expires_at`;
 
 export type JobFilters = {
   q?: string;
@@ -100,6 +101,21 @@ export async function getJobById(id: string): Promise<JobDetail | null> {
 export function companyInitial(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   return parts.map((p) => p[0]).join("").slice(0, 2).toUpperCase() || "FN";
+}
+
+/** Posted date as a short relative string: "Today" / "3 days ago" / "2 weeks ago" / "Mar 4". */
+export function formatPostedDate(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
+  const days = Math.floor((Date.now() - then) / 86_400_000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  if (days < 28) {
+    const w = Math.floor(days / 7);
+    return `${w} week${w === 1 ? "" : "s"} ago`;
+  }
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(iso));
 }
 
 /** Salary range as "₹12.0–18.0 LPA" / "From ₹5.0 LPA" / "Salary not disclosed". */
