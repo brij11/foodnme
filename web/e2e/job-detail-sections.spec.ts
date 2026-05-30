@@ -23,12 +23,34 @@ test.describe("Job detail structured sections (story-jobs-11)", () => {
     await expect(page.getByText(job.responsibilities[0]!)).toBeVisible();
     await expect(page.getByText(job.requirements[0]!)).toBeVisible();
 
-    // Featured badge in the header.
-    await expect(page.getByText("Featured")).toBeVisible();
+    // Featured badge in the header (a featured card may also appear in Similar roles).
+    await expect(page.getByText("Featured").first()).toBeVisible();
 
     // Aside detail-meta list + info note.
     await expect(page.getByText("Applicants", { exact: true })).toBeVisible();
     await expect(page.getByText("Job type", { exact: true })).toBeVisible();
     await expect(page.getByText(/Applications reviewed weekly/)).toBeVisible();
+  });
+
+  test("renders a 'Similar roles' grid of up to 3 cards excluding the current job (story-jobs-12)", async ({
+    page,
+  }) => {
+    const { data } = await anonClient()
+      .from("jobs")
+      .select("id, title")
+      .eq("status", "active")
+      .limit(1)
+      .single();
+    const job = data as { id: string; title: string };
+
+    await page.goto(`/jobs/${job.id}`);
+    const section = page.locator("section", { has: page.getByRole("heading", { name: "Similar roles" }) });
+    await expect(section).toBeVisible();
+    const cards = section.getByTestId("job-card");
+    const count = await cards.count();
+    expect(count).toBeGreaterThan(0);
+    expect(count).toBeLessThanOrEqual(3);
+    // The current job's own card never appears in its similar list.
+    await expect(section.getByRole("link", { name: "View job" })).not.toHaveCount(0);
   });
 });

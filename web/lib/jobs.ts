@@ -97,6 +97,52 @@ export async function getJobById(id: string): Promise<JobDetail | null> {
   return (data as JobDetail | null) ?? null;
 }
 
+/**
+ * "Similar roles" for the job-detail footer (story-jobs-12): strongest signal first (overlapping
+ * skills), then top up with the same experience level — excluding the current job, active only,
+ * newest-first (deterministic), capped at `limit`. Mirrors `getRelatedArticles`.
+ */
+export async function getSimilarJobs(
+  job: Pick<JobDetail, "id" | "experience_level" | "skills">,
+  limit = 3,
+): Promise<JobCardData[]> {
+  const supabase = createPublicClient();
+
+  const chosen: JobCardData[] = [];
+  if (job.skills.length > 0) {
+    const { data, error } = await supabase
+      .from("jobs")
+      .select(CARD_COLUMNS)
+      .eq("status", "active")
+      .neq("id", job.id)
+      .overlaps("skills", job.skills)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) throw new Error(`getSimilarJobs failed: ${error.message}`);
+    chosen.push(...((data as JobCardData[] | null) ?? []));
+  }
+  if (chosen.length >= limit) return chosen.slice(0, limit);
+
+  const taken = new Set([job.id, ...chosen.map((j) => j.id)]);
+  const { data, error } = await supabase
+    .from("jobs")
+    .select(CARD_COLUMNS)
+    .eq("status", "active")
+    .eq("experience_level", job.experience_level)
+    .neq("id", job.id)
+    .order("created_at", { ascending: false })
+    .limit(limit + chosen.length + 1);
+  if (error) throw new Error(`getSimilarJobs failed: ${error.message}`);
+
+  for (const j of (data as JobCardData[] | null) ?? []) {
+    if (chosen.length >= limit) break;
+    if (taken.has(j.id)) continue;
+    taken.add(j.id);
+    chosen.push(j);
+  }
+  return chosen.slice(0, limit);
+}
+
 /** 2-letter company initials (rendering-only field in the prototype). */
 export function companyInitial(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);

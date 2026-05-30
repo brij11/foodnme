@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getJobById, companyInitial, formatSalary, formatPostedDate } from "@/lib/jobs";
+import { getJobById, getSimilarJobs, companyInitial, formatSalary, formatPostedDate } from "@/lib/jobs";
 import { createClient } from "@/lib/supabase/server";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { Tag } from "@/components/ui/Tag";
 import { Icon } from "@/components/ui/Icon";
 import { ApplyButton } from "@/components/jobs/ApplyButton";
+import { JobCard } from "@/components/jobs/JobCard";
 
 /** "What you'll do" / "Who we're looking for" check-listed section (story-jobs-11). */
 function CheckList({ title, items }: { title: string; items: string[] }) {
@@ -40,6 +41,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 export default async function JobDetailPage({ params }: { params: { id: string } }) {
   const job = await getJobById(params.id);
   if (!job) notFound();
+
+  const similar = await getSimilarJobs(job, 3);
 
   // Role-aware Apply CTA: read the viewer's role server-side (null when signed out).
   const supabase = createClient();
@@ -141,6 +144,17 @@ export default async function JobDetailPage({ params }: { params: { id: string }
           </p>
         </aside>
       </div>
+
+      {similar.length > 0 ? (
+        <section className="mt-14 border-t border-border pt-10">
+          <h2 className="font-heading text-[1.3rem] font-bold text-text">Similar roles</h2>
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {similar.map((j) => (
+              <JobCard key={j.id} job={j} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
