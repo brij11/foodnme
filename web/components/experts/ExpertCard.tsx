@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Card } from "@/components/ui/Card";
 import { Tag } from "@/components/ui/Tag";
 import { Icon } from "@/components/ui/Icon";
@@ -12,10 +13,11 @@ export function ExpertCard({ expert }: { expert: ExpertCardData }) {
     <Card hover data-testid="expert-card" className="flex h-full flex-col gap-4">
       <div className="flex items-start gap-3.5">
         {expert.avatar_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={expert.avatar_url}
             alt=""
+            width={48}
+            height={48}
             className="h-12 w-12 shrink-0 rounded-full object-cover"
           />
         ) : (

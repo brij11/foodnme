@@ -10,19 +10,18 @@ async function gotoAarti(page: import("@playwright/test").Page) {
 }
 
 test.describe("/experts/[id] detail (story-experts-02)", () => {
-  test("renders the full profile (no rating/engagement cards); no a11y violations", async ({
+  test("renders the full profile (enriched by story-experts-10); no a11y violations", async ({
     page,
   }) => {
     await gotoAarti(page);
     await expect(page.getByRole("heading", { name: "Dr. Aarti Menon", level: 1 })).toBeVisible();
-    await expect(page.getByText("FSSAI Lead Auditor", { exact: true })).toBeVisible();
+    // Title appears in the hero and (story-experts-10) may recur in a Similar-experts card — scope to the hero.
+    await expect(page.getByText("FSSAI Lead Auditor", { exact: true }).first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "About" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Certifications" })).toBeVisible();
     await expect(page.getByText("FSSC 22000 Lead Auditor")).toBeVisible();
     await expect(page.getByText("Quick stats")).toBeVisible();
     await expect(page.getByText("₹6,000/hr").first()).toBeVisible();
-    // Reconciliation: no star rating / reviews / engagement-type cards.
-    await expect(page.getByText(/reviews/i)).toHaveCount(0);
     await expectNoSeriousA11yViolations(page);
   });
 

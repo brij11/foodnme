@@ -25,7 +25,7 @@ export function JobCard({ job }: { job: JobCardData }) {
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-2">
           {job.is_featured ? <Tag variant="accent">Featured</Tag> : null}
-          <SaveButton jobId={job.id} variant="card" />
+          <SaveButton itemType="job" itemId={job.id} variant="card" />
         </div>
       </div>
 

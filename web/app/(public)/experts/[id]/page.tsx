@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
-import { getExpertById, expertInitials, formatHourlyRate } from "@/lib/experts";
+import { getExpertById, getSimilarExperts, expertInitials, formatHourlyRate } from "@/lib/experts";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { Tag } from "@/components/ui/Tag";
 import { Icon } from "@/components/ui/Icon";
 import { ContactExpertButton } from "@/components/experts/ContactExpertButton";
+import { ExpertCard } from "@/components/experts/ExpertCard";
+import { SaveButton } from "@/components/jobs/SaveButton";
 
 export async function generateMetadata({
   params,
@@ -25,6 +28,8 @@ export default async function ExpertDetailPage({ params }: { params: { id: strin
   const expert = await getExpertById(params.id);
   if (!expert) notFound();
 
+  const similar = await getSimilarExperts(expert, 3);
+
   return (
     <div className="mx-auto max-w-content px-6 pt-8 lg:px-12">
       <Breadcrumb
@@ -39,8 +44,13 @@ export default async function ExpertDetailPage({ params }: { params: { id: strin
       <div className="flex flex-col gap-6 border-b border-border pb-8 md:flex-row md:items-start md:justify-between">
         <div className="flex items-start gap-5">
           {expert.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={expert.avatar_url} alt="" className="h-20 w-20 rounded-full object-cover" />
+            <Image
+              src={expert.avatar_url}
+              alt=""
+              width={80}
+              height={80}
+              className="h-20 w-20 shrink-0 rounded-full object-cover"
+            />
           ) : (
             <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-tag-safe-bg font-heading text-[1.5rem] font-bold text-tag-safe-text">
               {expertInitials(expert.full_name)}
@@ -87,6 +97,14 @@ export default async function ExpertDetailPage({ params }: { params: { id: strin
             expertName={expert.full_name}
             isAvailable={expert.is_available}
           />
+          <div className="w-full md:w-auto md:min-w-[200px]">
+            <SaveButton
+              itemType="expert"
+              itemId={expert.id}
+              variant="detail"
+              unsavedLabel="Save profile"
+            />
+          </div>
         </div>
       </div>
 
@@ -116,11 +134,52 @@ export default async function ExpertDetailPage({ params }: { params: { id: strin
               </li>
             ))}
           </ul>
+
+          {expert.engagement_types.length > 0 ? (
+            <section data-testid="engagement-types">
+              <h3 className="mt-8 font-heading text-[1.1rem] font-bold text-text">Engagement types</h3>
+              <div className="mt-3 flex flex-col gap-3">
+                {expert.engagement_types.map((e) => (
+                  <div
+                    key={e.kind}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card-bg px-5 py-4"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-heading text-[0.95rem] font-bold text-text">{e.title}</div>
+                      <p className="mt-0.5 font-body text-[0.84rem] text-muted">{e.desc}</p>
+                    </div>
+                    <span className="font-heading text-[0.92rem] font-bold text-primary">{e.price}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
         </div>
 
         <aside className="h-fit rounded-lg border border-border bg-card-bg p-6">
           <h2 className="mb-4 font-heading text-[0.95rem] font-bold text-text">Quick stats</h2>
-          <dl className="flex flex-col gap-3">
+          <dl className="flex flex-col gap-3" data-testid="quick-stats">
+            {expert.review_count > 0 && expert.rating != null ? (
+              <>
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <dt className="font-body text-[0.82rem] text-muted">Rating</dt>
+                  <dd className="flex items-center gap-1 font-heading text-[0.86rem] font-bold text-text">
+                    <Icon name="star" size={13} className="text-accent" />
+                    {expert.rating.toFixed(1)} / 5.0
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <dt className="font-body text-[0.82rem] text-muted">Reviews</dt>
+                  <dd className="font-heading text-[0.86rem] font-bold text-text">{expert.review_count}</dd>
+                </div>
+              </>
+            ) : null}
+            {expert.response_time ? (
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <dt className="font-body text-[0.82rem] text-muted">Response time</dt>
+                <dd className="font-heading text-[0.86rem] font-bold text-text">{expert.response_time}</dd>
+              </div>
+            ) : null}
             <div className="flex items-center justify-between border-b border-border pb-3">
               <dt className="font-body text-[0.82rem] text-muted">Experience</dt>
               <dd className="font-heading text-[0.86rem] font-bold text-text">
@@ -142,6 +201,17 @@ export default async function ExpertDetailPage({ params }: { params: { id: strin
           </dl>
         </aside>
       </div>
+
+      {similar.length > 0 ? (
+        <section className="mt-14 border-t border-border pt-10">
+          <h2 className="font-heading text-[1.3rem] font-bold text-text">Similar experts</h2>
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {similar.map((e) => (
+              <ExpertCard key={e.id} expert={e} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

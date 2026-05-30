@@ -121,6 +121,29 @@ export async function getExpertById(id: string): Promise<ExpertDetail | null> {
   return (data as ExpertDetail | null) ?? null;
 }
 
+/**
+ * "Similar experts" for the detail page (story-experts-10): active experts with overlapping
+ * specializations, excluding the current expert, featured-first then newest, capped at `limit`.
+ */
+export async function getSimilarExperts(
+  expert: Pick<ExpertDetail, "id" | "specializations">,
+  limit = 3,
+): Promise<ExpertCardData[]> {
+  if (expert.specializations.length === 0) return [];
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("experts")
+    .select(CARD_COLUMNS)
+    .eq("status", "active")
+    .neq("id", expert.id)
+    .overlaps("specializations", expert.specializations)
+    .order("is_featured", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(`getSimilarExperts failed: ${error.message}`);
+  return (data as ExpertCardData[] | null) ?? [];
+}
+
 /** 2-letter initials fallback when an expert has no avatar (CLAUDE.md rendering rule). */
 export function expertInitials(fullName: string): string {
   const parts = fullName.trim().split(/\s+/).filter(Boolean);

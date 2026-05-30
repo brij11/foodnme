@@ -3,11 +3,12 @@ id: story-experts-10
 topic: experts
 sprint: 4
 story_points: 4
-status: ready
+status: done
 owner: brij
 tasks_populated: true
 analyzed: true
 analyzed_date: 2026-05-30
+executed_date: 2026-05-30
 dependencies:
   - story-experts-02
   - story-experts-08
@@ -25,22 +26,22 @@ As a business evaluating an expert, I want to see how I can engage them, their r
 `app/(public)/experts/[id]/page.tsx` has hero, about, specializations, certifications, and a basic quick-stats aside. Add the designed sections from `screens-experts.jsx`: an **engagement types** block (Hourly consult / Project / Retainer with prices), a **similar experts** grid, a **"Save profile"** action, and extended **quick-stats** rows (rating, reviews, response time). Engagement/rating data comes from `story-experts-08`.
 
 ## Acceptance criteria
-- [ ] Engagement-types block renders the available types (hourly/project/retainer) with their pricing from `experts.engagement_types` (`story-experts-08`)
-- [ ] "Similar experts" grid renders related experts (by overlapping specialization), excluding the current expert and non-active profiles; hidden when none
-- [ ] Quick-stats aside adds rating, review count, and response time alongside experience/rate/location
-- [ ] "Save profile" saves/unsaves the expert via `POST/DELETE /api/saved-items` with `item_type='expert'` (the generalized `saved_items` table from OQ#12 / `story-jobs-15`); gated to authenticated users (anonymous → `/login?redirect=…`); control reflects saved state and is idempotent
-- [ ] Avatar uses `next/image` per §7.5 (replacing the raw `<img>`), here and on the card
-- [ ] Sections degrade gracefully when optional data (reviews, engagement types) is absent
-- [ ] Matches `screens-experts.jsx` layout; green only on actionable elements
+- [x] Engagement-types block renders the available types (hourly/project/retainer) with their pricing from `experts.engagement_types` (`story-experts-08`) — `engagement-types` section; `e2e/expert-detail-enrichment.spec.ts` asserts Hourly consult + Retainer
+- [x] "Similar experts" grid renders related experts (by overlapping specialization), excluding the current expert and non-active profiles; hidden when none — `getSimilarExperts` (overlaps, `neq` current, active, featured-first); rendered grid (verified via RSC: Aarti → Karthik only, self excluded); hidden when empty
+- [x] Quick-stats aside adds rating, review count, and response time alongside experience/rate/location — `quick-stats` rows; E2E asserts Rating/Reviews/Response time
+- [x] "Save profile" saves/unsaves the expert via `POST/DELETE /api/saved-items` with `item_type='expert'`; gated to authenticated users (anonymous → `/login?redirect=…`); control reflects saved state and is idempotent — generalized `SaveButton itemType="expert"`; E2E asserts anon→`/login?redirect=%2Fexperts%2F<id>` and authed save persists one expert-typed row
+- [x] Avatar uses `next/image` per §7.5 (replacing the raw `<img>`), here and on the card — `next/image` on the detail hero + `ExpertCard` (hosts already allow-listed in `next.config`)
+- [x] Sections degrade gracefully when optional data (reviews, engagement types) is absent — engagement block + rating/reviews rows render only when present
+- [x] Matches `screens-experts.jsx` layout; green only on actionable elements — ported sections; experts-detail a11y E2E passes
 
 ## Tasks
-- [new] Add the engagement-types block (hourly / project / retainer with prices) reading `experts.engagement_types`, per `screens-experts.jsx`
-- [new] Add the "Similar experts" grid (overlapping specialization; exclude current expert + non-active; hidden when none)
-- [new] Extend the quick-stats aside with rating, review count, and response time alongside experience / rate / location
-- [new] Add the "Save profile" save/unsave control wired to `POST/DELETE /api/saved-items` (`item_type='expert'`); authed-only with anon → `/login?redirect=…`; reflect saved state; idempotent
-- [new] Replace the raw `<img>` avatar with `next/image` (per §7.5) on the detail page and the card
-- [new] Ensure graceful degradation when reviews / engagement types are absent; match layout; green only on actionable elements
-- [new] Add tests for engagement-types render, similar-experts filtering, and save/unsave (incl. anon redirect)
+- [completed] Add the engagement-types block (hourly / project / retainer with prices) reading `experts.engagement_types`, per `screens-experts.jsx`
+- [completed] Add the "Similar experts" grid (overlapping specialization; exclude current expert + non-active; hidden when none)
+- [completed] Extend the quick-stats aside with rating, review count, and response time alongside experience / rate / location
+- [completed] Add the "Save profile" save/unsave control wired to `POST/DELETE /api/saved-items` (`item_type='expert'`); authed-only with anon → `/login?redirect=…`; reflect saved state; idempotent
+- [completed] Replace the raw `<img>` avatar with `next/image` (per §7.5) on the detail page and the card
+- [completed] Ensure graceful degradation when reviews / engagement types are absent; match layout; green only on actionable elements
+- [completed] Add tests for engagement-types render, similar-experts filtering, and save/unsave (incl. anon redirect)
 
 ## Notes
 - Audit gaps ED1–ED5 (Partial). Hard-depends on `story-experts-08`.

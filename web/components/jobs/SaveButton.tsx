@@ -7,19 +7,26 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils/cn";
 
 type SaveState = "loading" | "anon" | "saved" | "unsaved";
+type ItemType = "job" | "expert";
 
 /**
- * Save/unsave control for a job (story-jobs-15). Self-contained: on mount it reads the session +
- * the viewer's saved state (RLS-scoped), then toggles via /api/saved-items. Anonymous users are
- * routed to /login?redirect=…. `variant="detail"` is the full "Save for later" button; "card" is a
- * compact bookmark icon.
+ * Save/unsave control for a saved_items entry (story-jobs-15; generalized for experts in
+ * story-experts-10). Self-contained: on mount it reads the session + the viewer's saved state
+ * (RLS-scoped), then toggles via /api/saved-items. Anonymous users route to /login?redirect=….
+ * `variant="detail"` is the full labelled button; "card" is a compact bookmark icon.
  */
 export function SaveButton({
-  jobId,
+  itemType,
+  itemId,
   variant = "detail",
+  savedLabel = "Saved",
+  unsavedLabel = "Save for later",
 }: {
-  jobId: string;
+  itemType: ItemType;
+  itemId: string;
   variant?: "detail" | "card";
+  savedLabel?: string;
+  unsavedLabel?: string;
 }) {
   const [state, setState] = useState<SaveState>("loading");
   const router = useRouter();
@@ -34,17 +41,17 @@ export function SaveButton({
       const { count } = await supabase
         .from("saved_items")
         .select("id", { count: "exact", head: true })
-        .eq("item_type", "job")
-        .eq("item_id", jobId);
+        .eq("item_type", itemType)
+        .eq("item_id", itemId);
       setState(count && count > 0 ? "saved" : "unsaved");
     });
-  }, [jobId]);
+  }, [itemType, itemId]);
 
   const saved = state === "saved";
 
   async function onClick() {
     if (state === "anon") {
-      const path = typeof window !== "undefined" ? window.location.pathname : "/jobs";
+      const path = typeof window !== "undefined" ? window.location.pathname : "/";
       router.push(`/login?redirect=${encodeURIComponent(path)}`);
       return;
     }
@@ -54,16 +61,16 @@ export function SaveButton({
     const res = await fetch("/api/saved-items", {
       method: next ? "POST" : "DELETE",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ item_type: "job", item_id: jobId }),
+      body: JSON.stringify({ item_type: itemType, item_id: itemId }),
     });
     if (!res.ok) {
       setState(next ? "unsaved" : "saved"); // revert on failure
       return;
     }
-    router.refresh(); // keep the dashboard list + saved-count in sync
+    router.refresh(); // keep dependent lists/counts in sync
   }
 
-  const label = state === "anon" ? "Save for later" : saved ? "Saved" : "Save for later";
+  const noun = itemType === "expert" ? "profile" : "job";
 
   if (variant === "card") {
     return (
@@ -71,7 +78,7 @@ export function SaveButton({
         type="button"
         onClick={onClick}
         aria-pressed={saved}
-        aria-label={saved ? "Unsave job" : "Save job"}
+        aria-label={saved ? `Unsave ${noun}` : `Save ${noun}`}
         data-testid="save-button"
         data-state={state}
         className={cn(
@@ -100,7 +107,7 @@ export function SaveButton({
           : "border-border bg-card-bg text-primary hover:border-primary hover:bg-tag-safe-bg",
       )}
     >
-      <Icon name="bookmark" size={14} stroke={2} /> {label}
+      <Icon name="bookmark" size={14} stroke={2} /> {saved ? savedLabel : unsavedLabel}
     </button>
   );
 }

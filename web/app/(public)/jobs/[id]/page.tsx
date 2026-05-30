@@ -124,7 +124,7 @@ export default async function JobDetailPage({ params }: { params: { id: string }
           <p className="mt-1 font-body text-[0.78rem] text-muted">per year</p>
           <div className="mt-5 flex flex-col gap-2">
             <ApplyButton jobId={job.id} jobTitle={job.title} role={role} alreadyApplied={alreadyApplied} />
-            <SaveButton jobId={job.id} variant="detail" />
+            <SaveButton itemType="job" itemId={job.id} variant="detail" />
           </div>
 
           <ul className="mt-6 flex flex-col gap-2.5 border-t border-border pt-5 font-body text-[0.84rem]">
