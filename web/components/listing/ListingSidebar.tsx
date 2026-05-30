@@ -11,21 +11,29 @@ export type SidebarCategory = {
   active: boolean;
 };
 
+/** A generic multi-select facet (e.g. file format — story-templates-04) below the categories. */
+export type SidebarFacet = {
+  title: string;
+  options: { value: string; label: string; href: string; active: boolean }[];
+};
+
 /**
  * Shared listing sidebar (UI-DESIGN-HANDOFF.md §3.5): search input → category list with
- * counts → "Clear all filters" → optional mini-newsletter slot (blog/category only).
+ * counts → optional facet (e.g. file format) → "Clear all filters" → optional mini-newsletter.
  * Pure markup so it renders identically in the desktop rail and the mobile drawer.
  */
 export function ListingSidebar({
   searchType,
   searchPlaceholder = "Search…",
   categories,
+  facet,
   clearHref,
   newsletter,
 }: {
   searchType: string;
   searchPlaceholder?: string;
   categories: SidebarCategory[];
+  facet?: SidebarFacet;
   clearHref: string;
   newsletter?: ReactNode;
 }) {
@@ -75,6 +83,39 @@ export function ListingSidebar({
           Clear all filters
         </Link>
       </nav>
+
+      {facet ? (
+        <nav aria-label={facet.title} data-testid="format-facet">
+          <h2 className="mb-3.5 border-b border-border pb-3 font-heading text-[0.7rem] font-bold uppercase tracking-[0.12em] text-muted">
+            {facet.title}
+          </h2>
+          <ul className="flex flex-col gap-1.5">
+            {facet.options.map((o) => (
+              <li key={o.value}>
+                <Link
+                  href={o.href}
+                  aria-current={o.active ? "true" : undefined}
+                  className={cn(
+                    "flex items-center gap-2.5 rounded-lg px-3 py-2 font-body text-[0.88rem] font-medium transition-colors",
+                    o.active ? "text-text" : "text-muted hover:text-text",
+                  )}
+                >
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "flex h-4 w-4 items-center justify-center rounded border-[1.5px]",
+                      o.active ? "border-primary bg-primary text-white" : "border-border",
+                    )}
+                  >
+                    {o.active ? <Icon name="check" size={11} stroke={3} /> : null}
+                  </span>
+                  {o.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : null}
 
       {newsletter ? <div>{newsletter}</div> : null}
     </div>

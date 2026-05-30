@@ -35,7 +35,9 @@ export async function getResourceBySlug(slug: string): Promise<Resource | null> 
  * category (templates-01). `resources` is fully public (RLS allows anon read of every row),
  * so there is no `is_published` gate as the blog has.
  */
-export async function listResources(opts: { category?: string } = {}): Promise<Resource[]> {
+export async function listResources(
+  opts: { category?: string; formats?: string[] } = {},
+): Promise<Resource[]> {
   const supabase = createPublicClient();
   let query = supabase
     .from("resources")
@@ -44,6 +46,10 @@ export async function listResources(opts: { category?: string } = {}): Promise<R
 
   if (opts.category && opts.category !== "all") {
     query = query.eq("category", opts.category);
+  }
+  // File-format filter (story-templates-04) — multiple formats union via IN.
+  if (opts.formats && opts.formats.length > 0) {
+    query = query.in("file_type", opts.formats);
   }
 
   const { data, error } = await query;
