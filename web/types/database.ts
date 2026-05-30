@@ -136,12 +136,12 @@ export type Database = {
       }
       articles: {
         Row: {
-          author_name: string
           category: string
           content_mdx: string
           cover_image_url: string | null
           created_at: string
           excerpt: string
+          expert_id: string
           id: string
           is_published: boolean
           published_at: string | null
@@ -153,12 +153,12 @@ export type Database = {
           title: string
         }
         Insert: {
-          author_name?: string
           category: string
           content_mdx?: string
           cover_image_url?: string | null
           created_at?: string
           excerpt?: string
+          expert_id: string
           id?: string
           is_published?: boolean
           published_at?: string | null
@@ -170,12 +170,12 @@ export type Database = {
           title: string
         }
         Update: {
-          author_name?: string
           category?: string
           content_mdx?: string
           cover_image_url?: string | null
           created_at?: string
           excerpt?: string
+          expert_id?: string
           id?: string
           is_published?: boolean
           published_at?: string | null
@@ -187,6 +187,13 @@ export type Database = {
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "articles_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "articles_related_resource_slug_fkey"
             columns: ["related_resource_slug"]
@@ -209,11 +216,13 @@ export type Database = {
           id: string
           is_available: boolean
           is_featured: boolean
+          linkedin_url: string | null
           location: string
           search_vector: unknown
           specializations: string[]
           status: string
           title: string
+          twitter_url: string | null
           user_id: string | null
         }
         Insert: {
@@ -228,11 +237,13 @@ export type Database = {
           id?: string
           is_available?: boolean
           is_featured?: boolean
+          linkedin_url?: string | null
           location?: string
           search_vector?: unknown
           specializations?: string[]
           status?: string
           title?: string
+          twitter_url?: string | null
           user_id?: string | null
         }
         Update: {
@@ -247,11 +258,13 @@ export type Database = {
           id?: string
           is_available?: boolean
           is_featured?: boolean
+          linkedin_url?: string | null
           location?: string
           search_vector?: unknown
           specializations?: string[]
           status?: string
           title?: string
+          twitter_url?: string | null
           user_id?: string | null
         }
         Relationships: [

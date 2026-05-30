@@ -94,17 +94,20 @@ RLS is on for every table with restrictive defaults. Server-side admin operation
 | `resources` (templates) | yes | yes | admin only |
 | `newsletter_subscribers` | no | self only | self insert; admin update |
 | `service_inquiries` | no | no | anon insert; admin read/update |
+| `expert_inquiries` | no | self (owning expert) + admin | anon insert; owning expert updates `is_read` |
 | `profiles` | public-fields subset | self + public-fields | self update |
 | `jobs` (status='active') | yes | yes | owner write; admin approve |
 | `applications` | no | self (applicant) + employer-of-job | applicant insert; employer update status |
 | `experts` (status='active') | yes | yes | self update; admin approve/feature |
+| `saved_items` | no | self only | self insert/delete |
 | `admin_audit_log` | no | admin only | server insert (service role); no update/delete |
 
 ### 4.2 Tables
 
 ```sql
 articles            (id, title, slug UNIQUE, excerpt, content_mdx, category, tags[],
-                     cover_image_url, author_name, read_time_mins, is_published,
+                     cover_image_url, expert_id NOT NULL REFERENCES experts(id),
+                     read_time_mins, is_published,
                      published_at, is_featured boolean DEFAULT false,
                      related_resource_slug NULL REFERENCES resources(slug),
                      created_at, search_vector tsvector GENERATED)
@@ -122,25 +125,43 @@ profiles            (id PK REFERENCES auth.users, email, full_name,
                      is_admin DEFAULT false, avatar_url, created_at)
 
 jobs                (id, title, company_name, location, job_type, salary_min, salary_max,
-                     experience_level, description, skills[], status DEFAULT 'pending',
-                     employer_id REFERENCES profiles, created_at, expires_at)
+                     experience_level, description, responsibilities text[], requirements text[],
+                     skills[], is_featured boolean DEFAULT false, applicant_count int DEFAULT 0,
+                     status DEFAULT 'pending', employer_id REFERENCES profiles, created_at, expires_at)
 
 applications        (id, job_id REFERENCES jobs, applicant_id REFERENCES profiles,
                      resume_url, cover_note, status DEFAULT 'submitted', applied_at)
 
+saved_items         (id, user_id REFERENCES profiles, item_type CHECK IN ('job','expert'),
+                     item_id, saved_at, UNIQUE(user_id, item_type, item_id))
+
 experts             (id, user_id REFERENCES profiles, full_name, title, avatar_url, specializations[],
                      bio, experience_years, hourly_rate, certifications[], location, contact_email,
+                     linkedin_url, twitter_url,
+                     rating numeric(2,1), review_count int DEFAULT 0, response_time,
+                     engagement_types jsonb,
                      is_available DEFAULT true, status DEFAULT 'pending',
                      is_featured DEFAULT false, created_at,
                      search_vector tsvector GENERATED)
+
+expert_inquiries    (id, expert_id REFERENCES experts, sender_name, sender_email, company_name,
+                     engagement_type, message, is_read DEFAULT false, created_at)
 
 admin_audit_log     (id, actor_id REFERENCES profiles, action, target_table, target_id,
                      before jsonb, after jsonb, created_at)
 ```
 
-Indexes: `(category, is_published, published_at desc)` and `(slug)` on `articles`; GIN on every `search_vector`; `(employer_id)` on `jobs`; `(job_id, applicant_id)` unique on `applications`; `(actor_id, created_at desc)` on `admin_audit_log`.
+Indexes: `(category, is_published, published_at desc)`, `(slug)`, and `(expert_id)` on `articles`; GIN on every `search_vector`; `(employer_id)` on `jobs`; `(job_id, applicant_id)` unique on `applications`; `(expert_id, created_at desc)` on `expert_inquiries`; `(user_id, item_type, item_id)` unique on `saved_items`; `(actor_id, created_at desc)` on `admin_audit_log`.
 
 **Views.** `public_profiles` — a view over `profiles` exposing only `id`, `full_name`, `avatar_url` (the public-fields subset from §4.1), with `select` granted to `anon` + `authenticated`. Any public join that needs a profile's display name or avatar (e.g. experts/jobs author info) reads this view — never `select *` on `profiles`. RLS on the underlying `profiles` table still applies.
+
+**Article authorship (OQ#9).** Articles are written by experts — `articles.expert_id` references `experts(id)`; there is no separate author entity and no `author_name`. The author chip + bio card (`UI-DESIGN-HANDOFF.md` §3.7) render the linked expert's `full_name`, `title`, `avatar_url`, `bio`, `specializations[]`, and `linkedin_url`/`twitter_url`. Per-expert article count = `COUNT(articles WHERE expert_id = …)`. Article authors are expected to be active experts; the existing public read on `experts (status='active')` backs the public author display — no separate view needed. The admin article create/update payload (`POST/PATCH /api/admin/articles`) takes `expert_id` in place of the old `author_name`.
+
+**Expert ratings & engagement (OQ#10).** No reviews table — `experts.rating` (`numeric(2,1)`, one-decimal, 0.0–5.0) and `review_count` (int) are **stored directly**, not aggregated. `response_time` is a short display string (e.g. "< 24 hours"). `engagement_types` is a `jsonb` array of `{ kind, title, desc, price }` objects, where `kind ∈ ('hourly','project','retainer')` and `price` is a display string — the hourly entry's price derives from `hourly_rate`. Card + detail (`UI-DESIGN-HANDOFF.md` §3.2/§14) read these directly; RLS is unchanged (the public read on `experts (status='active')` already covers the new columns).
+
+**Structured job content (OQ#11).** `jobs.responsibilities` and `jobs.requirements` are `text[]` arrays rendering as the "What you'll do" / "Who we're looking for" lists on the job detail (`UI-DESIGN-HANDOFF.md`); `is_featured` (admin-set, like `experts.is_featured`) drives the card's featured badge. The free-text `description` is retained for back-compat — existing jobs without arrays still render their `description`. `POST /api/jobs`'s Zod schema accepts the new optional fields. `jobs.applicant_count` is a denormalized public counter maintained by a trigger on `applications` INSERT — it lets the card + detail show applicant numbers without exposing the RLS-restricted `applications` rows, and keeps the listing query free of per-card N+1 aggregation.
+
+**Saved items (OQ#12).** A single generalized `saved_items` table backs both saved jobs (`story-jobs-15`) and saved experts (`story-experts-10`), keyed by `(user_id, item_type, item_id)` with `item_type ∈ ('job','expert')`. RLS scopes every row to its owning user (self read/insert/delete); saves are idempotent via the unique constraint. Anonymous save attempts route to `/login?redirect=…`.
 
 ### 4.3 Seed
 
@@ -247,7 +268,9 @@ GET /api/healthz
 POST   /api/jobs                       (employer)        + turnstile + idempotency
 PATCH  /api/jobs/:id                   (owner or admin)
 POST   /api/applications               (seeker)          + turnstile + idempotency
-POST   /api/expert-inquiry             (public)          + turnstile
+POST   /api/saved-items                (authed)          → upsert saved_items (idempotent); Zod-validated {item_type,item_id}
+DELETE /api/saved-items                (authed)          → remove the caller's saved_items row
+POST   /api/expert-inquiry             (public)          + turnstile  → insert expert_inquiries → notify expert (ZeptoMail)
 POST   /api/experts                    (expert, self)    → insert own profile (status='pending'), notify admin
 PATCH  /api/experts/:id                (self or admin)
 PATCH  /api/experts/:id/availability   (self)
@@ -389,6 +412,7 @@ Implemented as a scheduled Supabase Edge Function (`pg_cron`):
 | Data | Retention |
 |---|---|
 | `service_inquiries` | 24 months from `submitted_at`, then purge |
+| `expert_inquiries` | 24 months from `created_at`, then purge |
 | `applications` | 12 months from `applied_at`, then purge |
 | `resume_url` in Storage | 12 months after parent `jobs.status` becomes 'closed' |
 | `newsletter_subscribers` | retain while `is_active=true`; unsubscribed rows pseudonymized (email hashed) after 6 months |
@@ -476,3 +500,7 @@ One row per env var. `NEXT_PUBLIC_*` are inlined at build time and exposed in th
 | OQ#6 | **Long-retention log drain (Axiom / Better Stack).** Add when Vercel's 7-day log retention becomes insufficient. | Production traffic > 500 unique users/day |
 | OQ#7 | **Tailwind reconciliation.** ✅ **Resolved 2026-05-23.** Tailwind (per §2) is the confirmed approach; the earlier plain-CSS migration suggestion is dropped. Locked during analysis of `story-homepage-01` (the first frontend port). | — (resolved) |
 | OQ#8 | **Second-admin onboarding.** `profiles.is_admin` is set manually. No invite UI exists for adding a second admin or editorial collaborator. | When a non-founder needs admin access |
+| OQ#9 | **Author entity for articles.** ✅ **Resolved 2026-05-30.** No author entity — articles are authored by experts via `articles.expert_id → experts(id)`; `author_name` dropped; `linkedin_url`/`twitter_url` added to `experts`. The author chip + bio card render the linked expert. Locked during analysis of `story-blog-06`. | — (resolved) |
+| OQ#10 | **Expert ratings, reviews & engagement types.** ✅ **Resolved 2026-05-30.** No reviews table — `rating numeric(2,1)`, `review_count int`, `response_time text` stored directly on `experts`; `engagement_types jsonb` array of `{kind,title,desc,price}`. Locked during analysis of `story-experts-08`. | — (resolved) |
+| OQ#11 | **Structured job content.** ✅ **Resolved 2026-05-30.** Added `responsibilities text[]`, `requirements text[]`, `is_featured boolean` to `jobs`; `description` kept for back-compat; `POST /api/jobs` Zod schema extended. Locked during analysis of `story-jobs-09`. | — (resolved) |
+| OQ#12 | **Saved jobs / bookmarks.** ✅ **Resolved 2026-05-30.** Generalized `saved_items(user_id, item_type, item_id, saved_at)`, `item_type ∈ ('job','expert')`, unique per `(user_id,item_type,item_id)`, self-scoped RLS; `POST/DELETE /api/saved-items`. Backs jobs + experts saves. Locked during analysis of `story-jobs-15`. | — (resolved) |

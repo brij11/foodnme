@@ -2,6 +2,36 @@ import { createPublicClient } from "@/lib/supabase/public";
 
 export const ARTICLES_PAGE_SIZE = 12;
 
+/**
+ * The article author is a linked expert (OQ#9 / story-blog-06): `articles.expert_id → experts(id)`.
+ * These are the public author-display fields the chip + bio card render (UI-DESIGN-HANDOFF.md §3.7).
+ */
+export type AuthorExpert = {
+  id: string;
+  full_name: string;
+  title: string;
+  avatar_url: string | null;
+  bio: string;
+  specializations: string[];
+  linkedin_url: string | null;
+  twitter_url: string | null;
+};
+
+const AUTHOR_FIELDS =
+  "id, full_name, title, avatar_url, bio, specializations, linkedin_url, twitter_url";
+
+// Fallback when an article's author expert isn't publicly readable (e.g. not active).
+const FALLBACK_AUTHOR: AuthorExpert = {
+  id: "",
+  full_name: "foodnme",
+  title: "",
+  avatar_url: null,
+  bio: "",
+  specializations: [],
+  linkedin_url: null,
+  twitter_url: null,
+};
+
 /** Fields the listing/cards need (a slim projection, not the full MDX body). */
 export type ArticleListItem = {
   title: string;
@@ -10,13 +40,26 @@ export type ArticleListItem = {
   category: string;
   tags: string[];
   cover_image_url: string | null;
+  /** Derived from `author.full_name` — keeps the card/OG author footer working. */
   author_name: string;
+  /** The linked author expert's public display fields (chip + bio card). */
+  author: AuthorExpert;
   read_time_mins: number;
   published_at: string | null;
 };
 
-const LIST_COLUMNS =
-  "title, slug, excerpt, category, tags, cover_image_url, author_name, read_time_mins, published_at";
+// supabase-js returns the embedded to-one expert under the `expert:` alias (object | null).
+type RawListRow = Omit<ArticleListItem, "author_name" | "author"> & {
+  expert: AuthorExpert | null;
+};
+
+const LIST_COLUMNS = `title, slug, excerpt, category, tags, cover_image_url, read_time_mins, published_at, expert:experts(${AUTHOR_FIELDS})`;
+
+function mapListItem(row: RawListRow): ArticleListItem {
+  const { expert, ...rest } = row;
+  const author = expert ?? FALLBACK_AUTHOR;
+  return { ...rest, author, author_name: author.full_name };
+}
 
 export type ArticleListResult = {
   articles: ArticleListItem[];
@@ -70,7 +113,7 @@ export async function listArticles(opts: {
 
   const total = count ?? 0;
   return {
-    articles: (data as ArticleListItem[] | null) ?? [],
+    articles: ((data as RawListRow[] | null) ?? []).map(mapListItem),
     total,
     page,
     pageSize,
@@ -95,11 +138,20 @@ export async function getLatestArticles(opts: {
     .order("published_at", { ascending: false })
     .limit(opts.limit);
   if (error) throw new Error(`getLatestArticles failed: ${error.message}`);
-  return (data as ArticleListItem[] | null) ?? [];
+  return ((data as RawListRow[] | null) ?? []).map(mapListItem);
 }
 
-/** Full article row (includes the MDX body) for the detail page. */
+/**
+ * Full article row (includes the MDX body) for the detail page. Carries the author expert's
+ * display fields plus that expert's published-article count for the author bio card (blog-06/07).
+ */
 export type Article = ArticleListItem & {
+  content_mdx: string;
+  related_resource_slug: string | null;
+  author_article_count: number;
+};
+
+type RawDetailRow = RawListRow & {
   content_mdx: string;
   related_resource_slug: string | null;
 };
@@ -116,7 +168,29 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
     .eq("is_published", true)
     .maybeSingle();
   if (error) throw new Error(`getArticleBySlug failed: ${error.message}`);
-  return (data as Article | null) ?? null;
+  if (!data) return null;
+
+  const row = data as RawDetailRow;
+  const base = mapListItem(row);
+
+  // Per-expert published-article count (author bio card "N articles" — §3.7).
+  let authorArticleCount = 0;
+  if (base.author.id) {
+    const { count, error: countError } = await supabase
+      .from("articles")
+      .select("id", { count: "exact", head: true })
+      .eq("expert_id", base.author.id)
+      .eq("is_published", true);
+    if (countError) throw new Error(`getArticleBySlug author count failed: ${countError.message}`);
+    authorArticleCount = count ?? 0;
+  }
+
+  return {
+    ...base,
+    content_mdx: row.content_mdx,
+    related_resource_slug: row.related_resource_slug,
+    author_article_count: authorArticleCount,
+  };
 }
 
 /**
@@ -142,7 +216,7 @@ export async function getRelatedArticles(
     .limit(limit);
   if (sameCategory.error) throw new Error(`getRelatedArticles failed: ${sameCategory.error.message}`);
 
-  const chosen = (sameCategory.data as ArticleListItem[] | null) ?? [];
+  const chosen = ((sameCategory.data as RawListRow[] | null) ?? []).map(mapListItem);
   if (chosen.length >= limit) return chosen.slice(0, limit);
 
   // Fall back to most-recent overall, skipping the current article and anything already chosen.
@@ -156,7 +230,7 @@ export async function getRelatedArticles(
     .limit(limit + chosen.length + 1);
   if (fallback.error) throw new Error(`getRelatedArticles failed: ${fallback.error.message}`);
 
-  for (const a of (fallback.data as ArticleListItem[] | null) ?? []) {
+  for (const a of ((fallback.data as RawListRow[] | null) ?? []).map(mapListItem)) {
     if (chosen.length >= limit) break;
     if (taken.has(a.slug)) continue;
     taken.add(a.slug);

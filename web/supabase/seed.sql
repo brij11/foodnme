@@ -1,7 +1,8 @@
 -- foodnme — dev seed (TECHNICAL-REQUIREMENTS.md §4.3). Ports prototype data.jsx content.
 -- Applied by `supabase db reset`. Sections are added by the stories that need them:
 --   • resources  → blog-05 (first to need it; templates-01/02/03 reuse the same rows)
---   • articles   → blog-01 (+ MDX sample article → blog-03)
+--   • experts    → experts-01 (seeded before articles so author links resolve — OQ#9/blog-06)
+--   • articles   → blog-01 (+ MDX sample article → blog-03); each links an expert via expert_id
 -- Image URLs stay as Unsplash links for dev per §4.3.
 -- `resources` is seeded before `articles` so `articles.related_resource_slug` FK resolves
 -- (the in-article CTA box in blog-05 links the HACCP article → the dairy HACCP template).
@@ -44,8 +45,57 @@ insert into resources (title, slug, description, category, file_url, file_type, 
  'Pre-print label review checklist aligned to current FSSAI labeling regulations and front-of-pack rules.',
  'compliance-docs', 'labelling-review-template.pdf', 'pdf', true, 1670);
 
+-- ───────────────────────── experts (experts-01) ─────────────────────────
+-- Ported from prototype data.jsx EXPERTS as status='active' (no linked user — directory seed).
+-- `rate` strings (₹6,000/hr) become integer hourly_rate; rating/reviews dropped (no schema).
+-- Seeded BEFORE articles so each article's `expert_id` author link resolves by full_name (blog-06).
+-- linkedin_url/twitter_url (blog-06) given to a few experts; the author chip/bio card tolerate null.
+insert into experts (full_name, title, location, experience_years, hourly_rate, specializations, certifications, bio, contact_email, is_available, is_featured, status, linkedin_url, twitter_url) values
+('Dr. Aarti Menon', 'FSSAI Lead Auditor', 'Mumbai · India', 12, 6000,
+ '{"Food Safety","HACCP","Auditing"}', '{"FSSAI Auditor","FSSC 22000 Lead Auditor","PhD Food Tech"}',
+ 'Twelve years auditing and implementing food safety systems for Indian food businesses. Trainer at NIFTEM workshops.',
+ 'aarti.menon@expert.foodnme.test', true, true, 'active',
+ 'https://www.linkedin.com/in/aarti-menon', 'https://twitter.com/aartimenon'),
+('Vikram Shah', 'Regulatory Affairs Consultant', 'Delhi NCR · India', 9, 4500,
+ '{"Regulatory Compliance","Labeling","Nutraceuticals"}', '{"MSc Food Tech","FSSAI Trainer"}',
+ 'Specializes in FSSAI licensing, nutraceutical compliance, and labeling reviews across India.',
+ 'vikram.shah@expert.foodnme.test', true, false, 'active',
+ 'https://www.linkedin.com/in/vikram-shah', null),
+('Priya Iyer', 'QC Manager · Dairy', 'Anand, Gujarat', 14, 5500,
+ '{"Quality Control","Dairy","Sensory Analysis"}', '{"BSc + MSc Food Tech","Six Sigma Black Belt"}',
+ 'Quality Control lead with deep experience in dairy. Shelf-life testing, sampling plans, and incoming-material inspection.',
+ 'priya.iyer@expert.foodnme.test', false, false, 'active',
+ 'https://www.linkedin.com/in/priya-iyer', null),
+('Devansh Roy', 'Process Engineer', 'Pune, Maharashtra', 8, 4800,
+ '{"Process Engineering","Product Development","Snacks"}', '{"BTech Food Engineering","Extrusion Specialist"}',
+ 'Process engineer with 8 years on extrusion, thermal, and aseptic lines. Helps food businesses scale up without sacrificing margins.',
+ 'devansh.roy@expert.foodnme.test', true, false, 'active',
+ null, null),
+('Naina Kapoor', 'Industry Analyst & Strategy', 'Bengaluru · India', 6, 3800,
+ '{"Strategy","Market Research","Nutraceuticals"}', '{"MBA · IIM","Food Tech Researcher"}',
+ 'Covers Indian food-tech investment, market structure, and category trends. Previously at a leading consumer-sector research firm.',
+ 'naina.kapoor@expert.foodnme.test', true, false, 'active',
+ 'https://www.linkedin.com/in/naina-kapoor', 'https://twitter.com/nainakapoor'),
+('Rohan Pillai', 'Sensory Scientist', 'Chennai, Tamil Nadu', 10, 5000,
+ '{"Sensory Analysis","Product Development","Beverages"}', '{"MSc Food Tech","Certified Sensory Panel Leader"}',
+ 'Sensory scientist working with beverage and savory brands. Panel design, descriptive analysis, and consumer testing.',
+ 'rohan.pillai@expert.foodnme.test', true, false, 'active',
+ null, null),
+('Meera Banerjee', 'Nutrition & Labeling Consultant', 'Kolkata · West Bengal', 11, 4200,
+ '{"Labeling","Nutraceuticals","Regulatory Compliance"}', '{"MSc Nutrition","FSSAI Trainer"}',
+ 'Nutrition and labeling expert. Pre-print label reviews, claim substantiation, and front-of-pack compliance.',
+ 'meera.banerjee@expert.foodnme.test', true, true, 'active',
+ 'https://www.linkedin.com/in/meera-banerjee', null),
+('Karthik Subramanian', 'Plant Operations Consultant', 'Hyderabad · India', 15, 6500,
+ '{"Process Engineering","Bakery","Auditing"}', '{"BTech + MTech","GFSI Trained"}',
+ 'Plant operations and turnaround specialist. Helps mid-sized food manufacturers improve OEE and pass audits the first time.',
+ 'karthik.subramanian@expert.foodnme.test', false, false, 'active',
+ null, null);
+
 -- ───────────────────────── articles (blog-01) ─────────────────────────
-insert into articles (title, slug, excerpt, content_mdx, category, tags, cover_image_url, author_name, read_time_mins, is_published, published_at) values
+-- author identity is the linked expert (blog-06/OQ#9): expert_id resolves by full_name from the
+-- experts seed above. 'Aarti Menon' maps to the honorific'd 'Dr. Aarti Menon' row.
+insert into articles (title, slug, excerpt, content_mdx, category, tags, cover_image_url, expert_id, read_time_mins, is_published, published_at) values
 ('A practical HACCP rollout for small food businesses', 'haccp-implementation-small-food-businesses',
  $$How to scope, document, and verify a HACCP plan without a 200-page binder. The shortest path to a defensible system.$$,
  $$## Start with the flow diagram
@@ -70,7 +120,8 @@ function f0(tempsC: number[]): number {
 
 <CTABox title="Grab the dairy HACCP plan template" body="A ready-to-adapt starting point." ctaText="Download template" ctaHref="/templates/haccp-plan-template-dairy" />$$,
  'food-safety', '{HACCP,FSSAI,Compliance}',
- 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=1200&q=80&auto=format&fit=crop', 'Aarti Menon', 9, true, '2026-05-12T09:00:00Z'),
+ 'https://images.unsplash.com/photo-1581094288338-2314dddb7ece?w=1200&q=80&auto=format&fit=crop',
+ (select id from experts where full_name = 'Dr. Aarti Menon'), 9, true, '2026-05-12T09:00:00Z'),
 
 ('FSSAI licensing updates that matter in 2026', 'fssai-licensing-changes-2026',
  $$Three changes to renewal timelines, a new category for cell-cultured products, and what is changed for nutraceuticals.$$,
@@ -82,7 +133,8 @@ Plan renewals earlier this year — the grace window narrowed.
 
 Cell-cultured products now have a defined application path.$$,
  'regulatory', '{FSSAI,Regulatory}',
- 'https://images.unsplash.com/photo-1532634922-8fe0b757fb13?w=1200&q=80&auto=format&fit=crop', 'Vikram Shah', 6, true, '2026-05-08T09:00:00Z'),
+ 'https://images.unsplash.com/photo-1532634922-8fe0b757fb13?w=1200&q=80&auto=format&fit=crop',
+ (select id from experts where full_name = 'Vikram Shah'), 6, true, '2026-05-08T09:00:00Z'),
 
 ('Designing a shelf-life study that holds up to audit', 'shelf-life-testing-protocols',
  $$Accelerated vs. real-time, sample sizes, and the documentation auditors actually look for.$$,
@@ -90,7 +142,8 @@ Cell-cultured products now have a defined application path.$$,
 
 Accelerated studies estimate; real-time studies confirm. Auditors want to see both reconciled.$$,
  'quality-control', '{"Shelf Life",Testing,Microbiology}',
- 'https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=1200&q=80&auto=format&fit=crop', 'Priya Iyer', 11, true, '2026-05-03T09:00:00Z'),
+ 'https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=1200&q=80&auto=format&fit=crop',
+ (select id from experts where full_name = 'Priya Iyer'), 11, true, '2026-05-03T09:00:00Z'),
 
 ('Allergen cross-contact: the controls auditors look for', 'allergen-cross-contact-controls',
  $$Cleaning validation, line scheduling, and labeling errors that have triggered recalls in the past 18 months.$$,
@@ -98,7 +151,8 @@ Accelerated studies estimate; real-time studies confirm. Auditors want to see bo
 
 A swab result is verification. A documented, repeatable cleaning procedure is validation.$$,
  'food-safety', '{Allergens,GMP}',
- 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=1200&q=80&auto=format&fit=crop', 'Aarti Menon', 8, true, '2026-04-28T09:00:00Z'),
+ 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=1200&q=80&auto=format&fit=crop',
+ (select id from experts where full_name = 'Dr. Aarti Menon'), 8, true, '2026-04-28T09:00:00Z'),
 
 ('Thermal process validation without the math anxiety', 'thermal-process-validation',
  $$F0 values, come-up time, and a worked example for a low-acid canned product line.$$,
@@ -106,7 +160,8 @@ A swab result is verification. A documented, repeatable cleaning procedure is va
 
 F0 is lethality expressed in equivalent minutes at 121.1C. Once you anchor on that, the math follows.$$,
  'processing', '{Thermal,Validation}',
- 'https://images.unsplash.com/photo-1565895405138-6c3a1555da6a?w=1200&q=80&auto=format&fit=crop', 'Devansh Roy', 13, true, '2026-04-22T09:00:00Z'),
+ 'https://images.unsplash.com/photo-1565895405138-6c3a1555da6a?w=1200&q=80&auto=format&fit=crop',
+ (select id from experts where full_name = 'Devansh Roy'), 13, true, '2026-04-22T09:00:00Z'),
 
 ('Sampling plans for incoming QC: what is enough?', 'sampling-plans-q-c-2026',
  $$AQL vs. zero-acceptance, when to switch, and how to negotiate sampling levels with suppliers.$$,
@@ -114,7 +169,8 @@ F0 is lethality expressed in equivalent minutes at 121.1C. Once you anchor on th
 
 Acceptable quality levels encode how much risk you are willing to accept. Make that explicit with suppliers.$$,
  'quality-control', '{Sampling,Inspection}',
- 'https://images.unsplash.com/photo-1567427018141-0584cfcbf1b8?w=1200&q=80&auto=format&fit=crop', 'Priya Iyer', 7, true, '2026-04-18T09:00:00Z'),
+ 'https://images.unsplash.com/photo-1567427018141-0584cfcbf1b8?w=1200&q=80&auto=format&fit=crop',
+ (select id from experts where full_name = 'Priya Iyer'), 7, true, '2026-04-18T09:00:00Z'),
 
 ('Where Indian food-tech capital is flowing in 2026', 'indian-food-tech-funding-2026',
  $$Cell-cultured, gut health, and the unexpected rise of B2B ingredient platforms. Numbers from the first quarter.$$,
@@ -122,7 +178,8 @@ Acceptable quality levels encode how much risk you are willing to accept. Make t
 
 The headline rounds went to consumer brands, but the steadiest capital flowed into B2B ingredient platforms.$$,
  'industry-insights', '{Funding,Trends}',
- 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=1200&q=80&auto=format&fit=crop', 'Naina Kapoor', 5, true, '2026-04-14T09:00:00Z'),
+ 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=1200&q=80&auto=format&fit=crop',
+ (select id from experts where full_name = 'Naina Kapoor'), 5, true, '2026-04-14T09:00:00Z'),
 
 ('Labeling compliance: the 12 errors we see repeatedly', 'labeling-compliance-checklist',
  $$Nutrition panel formatting, allergen declarations, and front-of-pack changes you might have missed.$$,
@@ -130,7 +187,8 @@ The headline rounds went to consumer brands, but the steadiest capital flowed in
 
 Rounding rules and serving-size math cause more rejections than any single ingredient issue.$$,
  'regulatory', '{Labeling,FSSAI}',
- 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=1200&q=80&auto=format&fit=crop', 'Vikram Shah', 10, true, '2026-04-09T09:00:00Z'),
+ 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=1200&q=80&auto=format&fit=crop',
+ (select id from experts where full_name = 'Vikram Shah'), 10, true, '2026-04-09T09:00:00Z'),
 
 ('Troubleshooting extrusion: density, expansion, and burn marks', 'extrusion-troubleshooting',
  $$A field guide for snack and breakfast cereal lines. With a screw configuration cheat sheet.$$,
@@ -138,7 +196,8 @@ Rounding rules and serving-size math cause more rejections than any single ingre
 
 Burn marks and inconsistent expansion usually point back to screw configuration and moisture, not temperature alone.$$,
  'processing', '{Extrusion,Troubleshooting}',
- 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=1200&q=80&auto=format&fit=crop', 'Devansh Roy', 14, true, '2026-04-02T09:00:00Z');
+ 'https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=1200&q=80&auto=format&fit=crop',
+ (select id from experts where full_name = 'Devansh Roy'), 14, true, '2026-04-02T09:00:00Z');
 
 -- ───────────────────────── article → template links (blog-05) ─────────────────────────
 -- The HACCP rollout article surfaces a structured in-article CTA box for the HACCP team
@@ -146,43 +205,6 @@ Burn marks and inconsistent expansion usually point back to screw configuration 
 -- plan template, so the structured CTA links to a distinct, complementary resource.
 update articles set related_resource_slug = 'haccp-team-charter'
  where slug = 'haccp-implementation-small-food-businesses';
-
--- ───────────────────────── experts (experts-01) ─────────────────────────
--- Ported from prototype data.jsx EXPERTS as status='active' (no linked user — directory seed).
--- `rate` strings (₹6,000/hr) become integer hourly_rate; rating/reviews dropped (no schema).
-insert into experts (full_name, title, location, experience_years, hourly_rate, specializations, certifications, bio, contact_email, is_available, is_featured, status) values
-('Dr. Aarti Menon', 'FSSAI Lead Auditor', 'Mumbai · India', 12, 6000,
- '{"Food Safety","HACCP","Auditing"}', '{"FSSAI Auditor","FSSC 22000 Lead Auditor","PhD Food Tech"}',
- 'Twelve years auditing and implementing food safety systems for Indian food businesses. Trainer at NIFTEM workshops.',
- 'aarti.menon@expert.foodnme.test', true, true, 'active'),
-('Vikram Shah', 'Regulatory Affairs Consultant', 'Delhi NCR · India', 9, 4500,
- '{"Regulatory Compliance","Labeling","Nutraceuticals"}', '{"MSc Food Tech","FSSAI Trainer"}',
- 'Specializes in FSSAI licensing, nutraceutical compliance, and labeling reviews across India.',
- 'vikram.shah@expert.foodnme.test', true, false, 'active'),
-('Priya Iyer', 'QC Manager · Dairy', 'Anand, Gujarat', 14, 5500,
- '{"Quality Control","Dairy","Sensory Analysis"}', '{"BSc + MSc Food Tech","Six Sigma Black Belt"}',
- 'Quality Control lead with deep experience in dairy. Shelf-life testing, sampling plans, and incoming-material inspection.',
- 'priya.iyer@expert.foodnme.test', false, false, 'active'),
-('Devansh Roy', 'Process Engineer', 'Pune, Maharashtra', 8, 4800,
- '{"Process Engineering","Product Development","Snacks"}', '{"BTech Food Engineering","Extrusion Specialist"}',
- 'Process engineer with 8 years on extrusion, thermal, and aseptic lines. Helps food businesses scale up without sacrificing margins.',
- 'devansh.roy@expert.foodnme.test', true, false, 'active'),
-('Naina Kapoor', 'Industry Analyst & Strategy', 'Bengaluru · India', 6, 3800,
- '{"Strategy","Market Research","Nutraceuticals"}', '{"MBA · IIM","Food Tech Researcher"}',
- 'Covers Indian food-tech investment, market structure, and category trends. Previously at a leading consumer-sector research firm.',
- 'naina.kapoor@expert.foodnme.test', true, false, 'active'),
-('Rohan Pillai', 'Sensory Scientist', 'Chennai, Tamil Nadu', 10, 5000,
- '{"Sensory Analysis","Product Development","Beverages"}', '{"MSc Food Tech","Certified Sensory Panel Leader"}',
- 'Sensory scientist working with beverage and savory brands. Panel design, descriptive analysis, and consumer testing.',
- 'rohan.pillai@expert.foodnme.test', true, false, 'active'),
-('Meera Banerjee', 'Nutrition & Labeling Consultant', 'Kolkata · West Bengal', 11, 4200,
- '{"Labeling","Nutraceuticals","Regulatory Compliance"}', '{"MSc Nutrition","FSSAI Trainer"}',
- 'Nutrition and labeling expert. Pre-print label reviews, claim substantiation, and front-of-pack compliance.',
- 'meera.banerjee@expert.foodnme.test', true, true, 'active'),
-('Karthik Subramanian', 'Plant Operations Consultant', 'Hyderabad · India', 15, 6500,
- '{"Process Engineering","Bakery","Auditing"}', '{"BTech + MTech","GFSI Trained"}',
- 'Plant operations and turnaround specialist. Helps mid-sized food manufacturers improve OEE and pass audits the first time.',
- 'karthik.subramanian@expert.foodnme.test', false, false, 'active');
 
 -- ───────────────────────── jobs (jobs-01) ─────────────────────────
 -- Ported from prototype data.jsx JOBS as status='active' (no employer — board seed). The

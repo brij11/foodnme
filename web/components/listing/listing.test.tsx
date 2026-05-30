@@ -13,6 +13,16 @@ const article: ArticleListItem = {
   tags: ["HACCP"],
   cover_image_url: "https://images.unsplash.com/photo-1?w=1200",
   author_name: "Aarti Menon",
+  author: {
+    id: "00000000-0000-0000-0000-000000000001",
+    full_name: "Aarti Menon",
+    title: "FSSAI Lead Auditor",
+    avatar_url: null,
+    bio: "",
+    specializations: ["Food Safety"],
+    linkedin_url: null,
+    twitter_url: null,
+  },
   read_time_mins: 9,
   published_at: "2026-05-12T09:00:00Z",
 };

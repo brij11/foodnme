@@ -82,15 +82,44 @@ describe("listArticles", () => {
 describe("getArticleBySlug / getPublishedSlugs (blog-02)", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("returns the published article row for a slug", async () => {
-    const row = { slug: "haccp-rollout", title: "HACCP", is_published: true };
+  it("returns the published article row for a slug (no expert → fallback author, no count query)", async () => {
+    const row = { slug: "haccp-rollout", title: "HACCP", is_published: true, expert: null };
     const c = chain({ data: row, error: null });
     vi.mocked(createClient).mockReturnValue({ from: () => c } as never);
 
     const article = await getArticleBySlug("haccp-rollout");
-    expect(article).toEqual(row);
+    expect(article?.slug).toBe("haccp-rollout");
+    // expert is folded into author + a derived author_name; the raw `expert` key is dropped.
+    expect(article).not.toHaveProperty("expert");
+    expect(article?.author_name).toBe("foodnme");
+    expect(article?.author_article_count).toBe(0);
     expect(c.eq).toHaveBeenCalledWith("slug", "haccp-rollout");
     expect(c.eq).toHaveBeenCalledWith("is_published", true);
+  });
+
+  it("joins the author expert and counts that expert's published articles (blog-06 AC#5)", async () => {
+    const expert = {
+      id: "11111111-1111-1111-1111-111111111111",
+      full_name: "Dr. Aarti Menon",
+      title: "FSSAI Lead Auditor",
+      avatar_url: null,
+      bio: "Twelve years auditing.",
+      specializations: ["HACCP"],
+      linkedin_url: "https://www.linkedin.com/in/aarti-menon",
+      twitter_url: null,
+    };
+    const row = { slug: "haccp-rollout", title: "HACCP", is_published: true, expert };
+    const client = clientWithQueue([
+      { data: row, error: null }, // detail row
+      { data: null, count: 4, error: null }, // per-expert published count
+    ]);
+    vi.mocked(createClient).mockReturnValue(client);
+
+    const article = await getArticleBySlug("haccp-rollout");
+    expect(article?.author).toEqual(expert);
+    expect(article?.author_name).toBe("Dr. Aarti Menon");
+    expect(article?.author.linkedin_url).toBe("https://www.linkedin.com/in/aarti-menon");
+    expect(article?.author_article_count).toBe(4);
   });
 
   it("returns null when no published row matches (→ 404)", async () => {
@@ -164,7 +193,10 @@ describe("getLatestArticles (story-homepage-04/05)", () => {
     vi.mocked(createClient).mockReturnValue(clientWithQueue([{ data: rows, error: null }]));
 
     const out = await getLatestArticles({ limit: 4 });
-    expect(out).toEqual(rows);
+    expect(out.map((a) => a.slug)).toEqual(["a", "b", "c", "d"]);
+    // each row is enriched with a derived author (fallback when no expert embedded).
+    expect(out[0]).toHaveProperty("author");
+    expect(out[0]).not.toHaveProperty("expert");
   });
 
   it("supports excluding the featured slug (rail never repeats the editorial feature)", async () => {
@@ -173,7 +205,7 @@ describe("getLatestArticles (story-homepage-04/05)", () => {
     );
 
     const out = await getLatestArticles({ limit: 4, excludeSlug: "featured" });
-    expect(out).toEqual([{ slug: "b" }, { slug: "c" }]);
+    expect(out.map((a) => a.slug)).toEqual(["b", "c"]);
   });
 
   it("returns [] when there are no published articles", async () => {
