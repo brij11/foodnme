@@ -14,8 +14,10 @@ function makeSupabase(expert: Record<string, unknown> | null) {
   const maybeSingle = vi.fn().mockResolvedValue({ data: expert, error: null });
   const eq = vi.fn(() => ({ maybeSingle }));
   const select = vi.fn(() => ({ eq }));
-  const from = vi.fn(() => ({ select }));
-  return { client: { from }, from, maybeSingle };
+  // story-experts-11: the route persists the inquiry (from("expert_inquiries").insert(...)).
+  const insert = vi.fn().mockResolvedValue({ error: null });
+  const from = vi.fn(() => ({ select, insert }));
+  return { client: { from }, from, maybeSingle, insert };
 }
 
 function req(body: unknown) {
@@ -50,6 +52,16 @@ describe("POST /api/expert-inquiry (story-experts-03)", () => {
     expect(await res.json()).toEqual({ ok: true });
 
     expect(sb.from).toHaveBeenCalledWith("experts");
+    // story-experts-11: the inquiry is persisted before the relay.
+    expect(sb.from).toHaveBeenCalledWith("expert_inquiries");
+    expect(sb.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        expert_id: EXPERT_ID,
+        sender_name: "Test Visitor",
+        sender_email: "visitor@example.com",
+        message: valid.message,
+      }),
+    );
     expect(sendEmail).toHaveBeenCalledTimes(2);
     const relay = vi.mocked(sendEmail).mock.calls[0]![0];
     expect(relay.to).toBe("aarti@expert.test");

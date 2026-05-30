@@ -1,6 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { ExpertDashboard, type ExpertRow } from "@/components/dashboard/ExpertDashboard";
+import {
+  ExpertDashboard,
+  type ExpertRow,
+  type ExpertInquiry,
+} from "@/components/dashboard/ExpertDashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -21,10 +25,21 @@ export default async function ExpertDashboardPage() {
   const { data: expert } = await supabase
     .from("experts")
     .select(
-      "id, full_name, title, bio, specializations, experience_years, hourly_rate, certifications, location, contact_email, avatar_url, status, is_available",
+      "id, full_name, title, bio, specializations, experience_years, hourly_rate, certifications, location, contact_email, avatar_url, status, is_available, rating, review_count, response_time",
     )
     .eq("user_id", user.id)
     .maybeSingle();
+
+  // The expert's own inquiries (RLS scopes to the owning expert — never cross-expert).
+  let inquiries: ExpertInquiry[] = [];
+  if (expert) {
+    const { data: rows } = await supabase
+      .from("expert_inquiries")
+      .select("id, sender_name, sender_email, company_name, engagement_type, message, is_read, created_at")
+      .eq("expert_id", (expert as { id: string }).id)
+      .order("created_at", { ascending: false });
+    inquiries = (rows as ExpertInquiry[] | null) ?? [];
+  }
 
   const fullName = profile?.full_name || user.email || "there";
 
@@ -32,6 +47,7 @@ export default async function ExpertDashboardPage() {
     <ExpertDashboard
       fullName={fullName}
       expert={(expert as ExpertRow | null) ?? null}
+      inquiries={inquiries}
       profileDefaults={{ full_name: fullName, email: profile?.email || user.email || "" }}
     />
   );

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
-import { Input, Textarea } from "@/components/ui/form";
+import { Input, Textarea, Select } from "@/components/ui/form";
 import { Turnstile } from "@/components/turnstile/Turnstile";
 import { expertInquirySchema, EXPERT_INQUIRY_FIELDS } from "@/lib/schemas/expert-inquiry";
 
@@ -29,6 +29,8 @@ export function ContactExpertModal({
   const dialogRef = useRef<HTMLDivElement>(null);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [engagementType, setEngagementType] = useState("");
   const [message, setMessage] = useState("");
   const [token, setToken] = useState("");
   const [errors, setErrors] = useState<Errors>({});
@@ -75,6 +77,8 @@ export function ContactExpertModal({
       expert_id: expertId,
       full_name: fullName,
       email,
+      company_name: companyName,
+      engagement_type: engagementType,
       message,
       turnstile_token: token,
     });
@@ -194,6 +198,24 @@ export function ContactExpertModal({
                 }}
                 error={errors.email}
               />
+              <Input
+                label="Company (optional)"
+                name="company_name"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="Your company or brand"
+              />
+              <Select
+                label="Engagement type (optional)"
+                name="engagement_type"
+                value={engagementType}
+                onChange={(e) => setEngagementType(e.target.value)}
+              >
+                <option value="">Not sure yet</option>
+                <option value="hourly">Hourly consult (30-60 min)</option>
+                <option value="project">Project engagement (2-6 weeks)</option>
+                <option value="retainer">Retainer (ongoing)</option>
+              </Select>
               <Textarea
                 label="What do you need help with?"
                 name="message"

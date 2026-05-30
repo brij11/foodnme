@@ -203,6 +203,50 @@ export type Database = {
           },
         ]
       }
+      expert_inquiries: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          engagement_type: string | null
+          expert_id: string
+          id: string
+          is_read: boolean
+          message: string
+          sender_email: string
+          sender_name: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          engagement_type?: string | null
+          expert_id: string
+          id?: string
+          is_read?: boolean
+          message: string
+          sender_email: string
+          sender_name: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          engagement_type?: string | null
+          expert_id?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          sender_email?: string
+          sender_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_inquiries_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       experts: {
         Row: {
           avatar_url: string | null

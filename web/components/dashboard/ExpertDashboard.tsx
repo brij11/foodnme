@@ -3,8 +3,10 @@
 import { DashboardShell, DashboardHeader, type DashboardTab } from "./DashboardShell";
 import { EmptyState } from "@/components/listing/EmptyState";
 import { Alert } from "@/components/ui/Alert";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import { ExpertProfileForm, type ExpertProfileInitial } from "./ExpertProfileForm";
 import { AvailabilityToggle } from "./AvailabilityToggle";
+import { InquiriesInbox } from "./InquiriesInbox";
 
 export type ExpertRow = {
   id: string;
@@ -20,16 +22,44 @@ export type ExpertRow = {
   avatar_url: string | null;
   status: string;
   is_available: boolean;
+  rating: number | null;
+  review_count: number;
+  response_time: string | null;
 };
 
-// Expert dashboard (story-experts-04 profile, story-experts-06 availability).
+export type ExpertInquiry = {
+  id: string;
+  sender_name: string;
+  sender_email: string;
+  company_name: string | null;
+  engagement_type: string | null;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+};
+
+function StatCard({ icon, label, value }: { icon: IconName; label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-card-bg p-5">
+      <div className="flex items-center gap-2 font-body text-[0.78rem] text-muted">
+        <Icon name={icon} size={14} stroke={1.8} />
+        {label}
+      </div>
+      <div className="mt-2 font-heading text-[1.6rem] font-bold text-text">{value}</div>
+    </div>
+  );
+}
+
+// Expert dashboard (story-experts-04 profile, story-experts-06 availability, story-experts-11 stats + inbox).
 export function ExpertDashboard({
   fullName,
   expert,
+  inquiries,
   profileDefaults,
 }: {
   fullName: string;
   expert: ExpertRow | null;
+  inquiries: ExpertInquiry[];
   profileDefaults: { full_name: string; email: string };
 }) {
   const isPending = expert?.status === "pending";
@@ -80,6 +110,28 @@ export function ExpertDashboard({
             title="Expert dashboard"
             subtitle="Keep your profile fresh, manage inquiries, and toggle availability."
           />
+          {expert ? (
+            // 4-card stats grid (story-experts-11). No fabricated metrics — profile views /
+            // active engagements aren't tracked, so they're omitted entirely.
+            <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="expert-stats">
+              <StatCard icon="mail" label="Inquiries" value={String(inquiries.length)} />
+              <StatCard
+                icon="star"
+                label="Avg rating"
+                value={expert.review_count > 0 && expert.rating != null ? expert.rating.toFixed(1) : "—"}
+              />
+              <StatCard
+                icon="clock"
+                label="Response time"
+                value={expert.response_time || "—"}
+              />
+              <StatCard
+                icon="verified"
+                label="Availability"
+                value={expert.is_available ? "Available" : "Unavailable"}
+              />
+            </div>
+          ) : null}
           {expert ? (
             <div className="rounded-lg border border-border bg-card-bg p-6">
               <p className="font-heading text-[1.05rem] font-bold text-text">{expert.title}</p>
@@ -157,11 +209,13 @@ export function ExpertDashboard({
       label: "Inquiries",
       icon: "mail",
       render: () => (
-        <EmptyState
-          title="No inquiries yet"
-          message="When a business contacts you through your profile, the message arrives in your email."
-          action={{ label: "View the experts directory", href: "/experts" }}
-        />
+        <>
+          <DashboardHeader
+            title="Inquiries"
+            subtitle="Businesses who reached out through your profile. Unread inquiries are marked."
+          />
+          <InquiriesInbox initial={inquiries} />
+        </>
       ),
     },
   ];

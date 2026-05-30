@@ -21,7 +21,8 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) {
     return err("invalid_body", "Invalid request.", 400, fieldErrors(parsed.error.flatten().fieldErrors));
   }
-  const { expert_id, full_name, email, message, turnstile_token } = parsed.data;
+  const { expert_id, full_name, email, company_name, engagement_type, message, turnstile_token } =
+    parsed.data;
 
   // §9.6 — verify the human-check before any lookup/relay.
   const passed = await verifyTurnstile(turnstile_token, request.headers.get("x-forwarded-for") ?? undefined);
@@ -42,6 +43,20 @@ export async function POST(request: NextRequest) {
   }
   if (!expert || expert.status !== "active") {
     return err("not_found", "That expert is no longer available.", 404);
+  }
+
+  // Persist the inquiry before notifying (story-experts-11) so it surfaces in the expert's
+  // dashboard inbox. A storage failure must not drop the message — log and still relay.
+  const { error: insertError } = await supabase.from("expert_inquiries").insert({
+    expert_id,
+    sender_name: full_name,
+    sender_email: email,
+    company_name: company_name || null,
+    engagement_type: engagement_type || null,
+    message,
+  });
+  if (insertError) {
+    logError("expert_inquiry.persist_failed", { message: insertError.message });
   }
 
   // Relay to the expert — Reply-To is the visitor so the expert can respond directly.
