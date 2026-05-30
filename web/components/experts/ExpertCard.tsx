@@ -41,8 +41,25 @@ export function ExpertCard({ expert }: { expert: ExpertCardData }) {
         </div>
       </div>
 
+      {/* Rating (story-experts-09) — star + numeric rating + review count, or "New" when unreviewed. */}
+      <div data-testid="rating" className="flex items-center gap-1.5 font-body text-[0.82rem]">
+        {expert.review_count > 0 && expert.rating != null ? (
+          <>
+            <Icon name="star" size={14} className="text-accent" />
+            <strong className="font-heading font-bold text-text">{expert.rating.toFixed(1)}</strong>
+            <span className="text-muted">
+              ({expert.review_count} {expert.review_count === 1 ? "review" : "reviews"})
+            </span>
+          </>
+        ) : (
+          <span className="text-muted">New</span>
+        )}
+      </div>
+
+      <p className="line-clamp-2 font-body text-[0.86rem] leading-relaxed text-muted">{expert.bio}</p>
+
       <div className="flex flex-wrap gap-1.5">
-        {expert.specializations.slice(0, 2).map((s) => (
+        {expert.specializations.slice(0, 3).map((s) => (
           <Tag key={s} variant="outline-green">
             {s}
           </Tag>

@@ -37,6 +37,7 @@ export type ExpertCardData = {
   title: string;
   avatar_url: string | null;
   specializations: string[];
+  bio: string;
   hourly_rate: number | null;
   location: string;
   is_available: boolean;
@@ -47,7 +48,7 @@ export type ExpertCardData = {
 };
 
 const CARD_COLUMNS =
-  "id, full_name, title, avatar_url, specializations, hourly_rate, location, is_available, is_featured, rating, review_count, response_time";
+  "id, full_name, title, avatar_url, specializations, bio, hourly_rate, location, is_available, is_featured, rating, review_count, response_time";
 
 export type ExpertFilters = {
   q?: string;
@@ -91,7 +92,6 @@ export async function listExperts(filters: ExpertFilters = {}): Promise<ExpertCa
 
 /** Full expert profile for the detail page — still WITHOUT `contact_email` (anti-harvesting). */
 export type ExpertDetail = ExpertCardData & {
-  bio: string;
   experience_years: number;
   certifications: string[];
   engagement_types: EngagementType[];

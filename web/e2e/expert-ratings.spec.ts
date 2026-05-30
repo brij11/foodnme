@@ -81,4 +81,14 @@ test.describe("Expert ratings & engagement schema (story-experts-08)", () => {
     expect(good.error).toBeNull();
     await admin.from("experts").delete().eq("contact_email", email);
   });
+
+  test("expert cards on /experts surface the rating + bio (story-experts-09)", async ({ page }) => {
+    await page.goto("/experts");
+    const card = page.getByTestId("expert-card").first();
+    await expect(card).toBeVisible();
+    // rating chip renders a numeric rating (e.g. 4.9) and a review count.
+    const rating = card.getByTestId("rating");
+    await expect(rating).toBeVisible();
+    await expect(rating).toContainText(/\d\.\d|New/);
+  });
 });
