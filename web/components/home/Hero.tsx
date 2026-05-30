@@ -17,7 +17,7 @@ function Stat({ value, label, suffix, thousands }: StatProps) {
       <div className="font-display text-2xl font-bold leading-none tracking-tight text-text">
         <CountUp value={value} suffix={suffix} thousands={thousands} />
       </div>
-      <div className="mt-1.5 font-heading text-[0.62rem] font-bold uppercase tracking-[0.1em] text-muted-2">
+      <div className="mt-1.5 font-heading text-[0.62rem] font-bold uppercase tracking-[0.1em] text-muted">
         {label}
       </div>
     </div>
@@ -68,7 +68,7 @@ export function Hero({ stats, covers }: { stats: SiteStats; covers: string[] }) 
             </ConsultationButton>
           </div>
 
-          <dl
+          <div
             data-testid="hero-stats"
             className="mt-12 grid max-w-md grid-cols-2 gap-6 sm:grid-cols-4"
           >
@@ -76,7 +76,7 @@ export function Hero({ stats, covers }: { stats: SiteStats; covers: string[] }) 
             <Stat value={stats.templates} label="Templates" />
             <Stat value={stats.businesses} suffix="+" label="Businesses Helped" />
             <Stat value={stats.subscribers} thousands label="Subscribers" />
-          </dl>
+          </div>
         </div>
 
         <HeroCollage covers={covers} />

@@ -34,7 +34,7 @@ export function HeroCollage({ covers }: HeroCollageProps) {
         <p className="mt-2 font-heading text-[0.85rem] font-semibold leading-snug text-text">
           HACCP Plan Template — Dairy Processing
         </p>
-        <div className="mt-3 flex justify-between font-body text-[0.65rem] text-muted-2">
+        <div className="mt-3 flex justify-between font-body text-[0.65rem] text-muted">
           <span>28 pages</span>
           <span>1,840 downloads</span>
         </div>
@@ -42,7 +42,7 @@ export function HeroCollage({ covers }: HeroCollageProps) {
 
       <div className="absolute bottom-2 left-10 rounded-lg border border-border bg-card-bg px-5 py-4 shadow-card">
         <div className="font-display text-2xl font-bold leading-none tracking-tight text-primary">4.2k</div>
-        <div className="mt-1 font-body text-[0.6rem] font-medium uppercase tracking-[0.08em] text-muted-2">
+        <div className="mt-1 font-body text-[0.6rem] font-medium uppercase tracking-[0.08em] text-muted">
           Subscribers
         </div>
       </div>

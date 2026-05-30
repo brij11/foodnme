@@ -12,7 +12,7 @@ export function FinalCta() {
   return (
     <section className="mx-auto max-w-content px-6 py-16 lg:px-12">
       <div className="rounded-xl bg-surface-light px-6 py-14 text-center">
-        <p className="font-heading text-[0.7rem] font-bold uppercase tracking-[0.14em] text-primary">
+        <p className="font-heading text-[0.7rem] font-bold uppercase tracking-[0.14em] text-primary-deep">
           Need someone to look at it?
         </p>
         <h2 className="mt-3 font-display text-[1.9rem] font-semibold text-text">

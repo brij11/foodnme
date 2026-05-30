@@ -2,18 +2,18 @@ import { test, expect } from "@playwright/test";
 import { expectNoSeriousA11yViolations } from "./utils/axe";
 
 test.describe("public layout + homepage (homepage-02)", () => {
-  test("renders the chrome, disabled Jobs/Experts, and footer (AC#1-3,6,9,10)", async ({ page }) => {
+  test("renders the chrome, full nav (Jobs/Experts now live), and footer (AC#1-3,6,9,10)", async ({ page }) => {
     await page.goto("/");
 
     // One Fraunces H1
     await expect(page.getByRole("heading", { level: 1 })).toContainText("safer food ecosystem");
 
-    // Enabled nav link vs disabled "coming soon" items (scoped to the primary nav)
+    // Primary nav links — Jobs/Experts shipped in later sprints, so they are now live
+    // links (no longer the homepage-02-era disabled "coming soon" spans).
     const nav = page.getByRole("navigation", { name: "Primary" });
     await expect(nav.getByRole("link", { name: "Knowledge Hub", exact: true })).toBeVisible();
-    const jobs = nav.locator('span[aria-disabled="true"]', { hasText: "Jobs" }).first();
-    await expect(jobs).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Jobs" })).toHaveCount(0);
+    await expect(nav.getByRole("link", { name: "Jobs", exact: true })).toHaveAttribute("href", "/jobs");
+    await expect(nav.getByRole("link", { name: "Experts", exact: true })).toHaveAttribute("href", "/experts");
 
     // Footer columns
     await expect(page.getByRole("heading", { name: "Explore" })).toBeVisible();
