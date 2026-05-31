@@ -3,11 +3,12 @@ id: story-experts-13
 topic: experts
 sprint: 5
 story_points: 3
-status: in-progress
+status: done
 owner: brij
 tasks_populated: true
 analyzed: true
 analyzed_date: 2026-05-31
+executed_date: 2026-06-01
 exec_model: sonnet
 dependencies:
   - story-experts-10
@@ -26,11 +27,11 @@ As an expert and a visitor viewing an expert, I want engagement options and dash
 Expert-detail and expert-dashboard layout deviations: engagement types render as a vertical list instead of the designed 3-card grid, the quick-stats aside reorders/conditionally hides rows, the dashboard availability toggle moved out of the header into a separate tab, and the dashboard stat tiles were relabeled (Profile views + Active engagements dropped). Covers DEVIATIONS.md **B10, B11, B12, D12**.
 
 ## Acceptance criteria
-- [ ] Expert-detail engagement types render as a responsive 3-up card grid (Hourly / Project / Retainer), not a stacked list (DEVIATIONS B12; `web/app/(public)/experts/[id]/page.tsx:138-156` vs `design/screens-experts.jsx:173-186`)
-- [ ] Expert-dashboard stat tiles either restore the prototype labels (Profile views, Inquiries, Avg. rating, Active engagements) or the swap is documented in the handoff (DEVIATIONS B10; `web/components/dashboard/ExpertDashboard.tsx:117-132`)
-- [ ] Availability toggle is surfaced on the dashboard overview header (in addition to / instead of the separate tab) per the design (DEVIATIONS B11; `web/components/dashboard/ExpertDashboard.tsx:186-206`)
-- [ ] Expert-detail quick-stats aside ordering reviewed against the design; the graceful "New"/unrated handling is preserved (DEVIATIONS D12; `web/app/(public)/experts/[id]/page.tsx:161-201`)
-- [ ] No regression to faithful detail pieces (hero, bio, specializations, certifications, contact modal, save, similar-experts rail)
+- [x] Expert-detail engagement types render as a responsive 3-up card grid (Hourly / Project / Retainer), not a stacked list (DEVIATIONS B12; `web/app/(public)/experts/[id]/page.tsx:138-156` vs `design/screens-experts.jsx:173-186`) — covered by `grid sm:grid-cols-2 lg:grid-cols-3` at page.tsx:142
+- [x] Expert-dashboard stat tiles either restore the prototype labels (Profile views, Inquiries, Avg. rating, Active engagements) or the swap is documented in the handoff (DEVIATIONS B10; `web/components/dashboard/ExpertDashboard.tsx:117-132`) — tiles: Inquiries / Avg. rating / Response time / Availability; "Profile views" / "Active engagements" omitted as unmodeled, documented in code comment + ExpertDashboard.test.tsx
+- [x] Availability toggle is surfaced on the dashboard overview header (in addition to / instead of the separate tab) per the design (DEVIATIONS B11; `web/components/dashboard/ExpertDashboard.tsx:186-206`) — AvailabilityToggle rendered at ExpertDashboard.tsx:114-118 in overview tab; test asserts role="switch"
+- [x] Expert-detail quick-stats aside ordering reviewed against the design; the graceful "New"/unrated handling is preserved (DEVIATIONS D12; `web/app/(public)/experts/[id]/page.tsx:161-201`) — order: Experience → Rating/Reviews (conditional review_count>0) → Rate → Location → Response time; comment at page.tsx:158-160
+- [x] No regression to faithful detail pieces (hero, bio, specializations, certifications, contact modal, save, similar-experts rail) — all sections present in page.tsx; 412 tests pass; build clean
 
 ## Tasks
 - [completed] Render expert-detail engagement types as a responsive 3-up card grid (Hourly / Project / Retainer) (AC 1)
