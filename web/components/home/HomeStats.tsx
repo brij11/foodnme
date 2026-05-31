@@ -22,7 +22,7 @@ export function HomeStats({ stats }: { stats: SiteStats }) {
       <div className="grid grid-cols-2 gap-8 rounded-xl border border-border bg-card-bg px-6 py-10 text-center sm:grid-cols-4">
         {cells.map((c) => (
           <div key={c.label}>
-            <div className="font-display text-[2.4rem] font-bold leading-none tracking-tight text-text">
+            <div className="font-heading text-[2.4rem] font-bold leading-none tracking-tight text-text">
               <CountUp value={c.value} suffix={c.suffix} />
             </div>
             <div className="mt-2 font-heading text-[0.66rem] font-bold uppercase tracking-[0.1em] text-muted">
