@@ -25,6 +25,10 @@ test.describe("/login (story-auth-01)", () => {
     // AC#6 — links to Register and Reset Password.
     await expect(page.getByRole("link", { name: "Create one" })).toHaveAttribute("href", "/register");
     await expect(page.getByRole("link", { name: "Forgot?" })).toHaveAttribute("href", "/reset-password");
+    // story-auth-09 (DEVIATIONS B6) — "Keep me signed in" checkbox, checked by default.
+    const keepSignedIn = page.getByRole("checkbox", { name: /keep me signed in for 30 days/i });
+    await expect(keepSignedIn).toBeVisible();
+    await expect(keepSignedIn).toBeChecked();
     // §10 accessibility gate — login is a key page.
     await expectNoSeriousA11yViolations(page);
   });
