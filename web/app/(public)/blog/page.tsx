@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { listArticles, getCategoryCounts, clampPage, parseSort } from "@/lib/articles";
-import { ARTICLE_CATEGORIES } from "@/lib/categories";
+import { listArticles, getFeaturedArticle, getCategoryCounts, clampPage, parseSort } from "@/lib/articles";
+import { ARTICLE_CATEGORIES, BLOG_POPULAR_TAGS } from "@/lib/categories";
 import { PageHeader } from "@/components/listing/PageHeader";
 import { ListingShell } from "@/components/listing/ListingShell";
 import { ListingSidebar, type SidebarCategory } from "@/components/listing/ListingSidebar";
@@ -9,13 +9,14 @@ import { Pagination } from "@/components/listing/Pagination";
 import { SortSelect } from "@/components/listing/SortSelect";
 import { EmptyState } from "@/components/listing/EmptyState";
 import { NewsletterBanner } from "@/components/newsletter/NewsletterBanner";
+import { EditorialFeature } from "@/components/home/EditorialFeature";
 
 export const metadata: Metadata = {
-  title: "Food Technology Blog — foodnme",
+  title: "Food Technology Blog -- foodnme",
   description:
     "Practical guidance on food safety, quality control, regulatory compliance, and processing for food-tech professionals.",
   openGraph: {
-    title: "Food Technology Blog — foodnme",
+    title: "Food Technology Blog -- foodnme",
     description:
       "Practical guidance on food safety, quality control, regulatory compliance, and processing.",
     type: "website",
@@ -38,8 +39,18 @@ export default async function BlogPage({ searchParams }: { searchParams: SearchP
   const sort = parseSort(searchParams.sort);
   const activeSlug = category ?? "all";
 
+  // Featured editorial slot: visible only on page 1 with no category filter (AC 1, 5).
+  const showFeatured = activeSlug === "all" && page === 1;
+  const featured = showFeatured ? await getFeaturedArticle() : null;
+
   const [result, counts] = await Promise.all([
-    listArticles({ category, page, sort }),
+    listArticles({
+      category,
+      page,
+      sort,
+      // Exclude the featured article from the grid so it doesn't appear twice (AC 1).
+      excludeSlug: featured?.slug,
+    }),
     getCategoryCounts(),
   ]);
 
@@ -57,9 +68,10 @@ export default async function BlogPage({ searchParams }: { searchParams: SearchP
   const sidebar = (
     <ListingSidebar
       searchType="articles"
-      searchPlaceholder="Search articles…"
+      searchPlaceholder="Search all of foodnme..."
       categories={sidebarCategories}
       clearHref="/blog"
+      popularTags={[...BLOG_POPULAR_TAGS]}
       newsletter={
         <NewsletterBanner
           mini
@@ -85,8 +97,14 @@ export default async function BlogPage({ searchParams }: { searchParams: SearchP
       <PageHeader
         overline="Knowledge Hub"
         title="Food Technology Blog"
-        sub="Practical guidance on food safety, quality control, regulatory compliance, and processing — written by working practitioners."
+        sub="Practical guidance on food safety, quality control, regulatory compliance, and processing -- written by working practitioners."
       />
+
+      {showFeatured && featured ? (
+        <div data-testid="blog-featured-slot" className="mb-12">
+          <EditorialFeature article={featured} />
+        </div>
+      ) : null}
 
       <ListingShell sidebar={sidebar}>
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">

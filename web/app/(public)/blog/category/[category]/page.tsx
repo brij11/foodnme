@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { listArticles, getCategoryCounts, clampPage, parseSort } from "@/lib/articles";
-import { ARTICLE_CATEGORIES, articleCategory } from "@/lib/categories";
+import { ARTICLE_CATEGORIES, BLOG_POPULAR_TAGS, articleCategory } from "@/lib/categories";
 import { PageHeader } from "@/components/listing/PageHeader";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { ListingShell } from "@/components/listing/ListingShell";
@@ -20,9 +20,9 @@ export const dynamicParams = false;
 
 export async function generateMetadata({ params }: { params: { category: string } }): Promise<Metadata> {
   const cat = articleCategory(params.category);
-  if (!cat) return { title: "Category not found — foodnme" };
-  const title = `${cat.label} Articles — foodnme`;
-  const description = `Food technology articles on ${cat.label.toLowerCase()} — practical guidance for professionals.`;
+  if (!cat) return { title: "Category not found -- foodnme" };
+  const title = `${cat.label} Articles -- foodnme`;
+  const description = `Food technology articles on ${cat.label.toLowerCase()} -- practical guidance for professionals.`;
   return { title, description, openGraph: { title, description, type: "website" } };
 }
 
@@ -60,9 +60,10 @@ export default async function CategoryPage({
   const sidebar = (
     <ListingSidebar
       searchType="articles"
-      searchPlaceholder="Search articles…"
+      searchPlaceholder="Search all of foodnme..."
       categories={sidebarCategories}
       clearHref="/blog"
+      popularTags={[...BLOG_POPULAR_TAGS]}
       newsletter={<NewsletterBanner mini source="blog" headline="The weekly food-tech brief" subtext="Practical guidance, once a week." />}
     />
   );
@@ -80,7 +81,11 @@ export default async function CategoryPage({
       <div className="pt-10">
         <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Blog", href: "/blog" }, { label: cat.label }]} />
       </div>
-      <PageHeader overline="Knowledge Hub" title={`${cat.label} Articles`} />
+      <PageHeader
+        overline={cat.label}
+        title={`${cat.label} Articles`}
+        sub={`${result.total} ${result.total === 1 ? "article" : "articles"} on ${cat.label.toLowerCase()} -- sorted by recency.`}
+      />
 
       <ListingShell sidebar={sidebar}>
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
