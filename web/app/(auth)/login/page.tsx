@@ -19,6 +19,9 @@ function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // "Keep me signed in for 30 days" — checked by default, parity with the prototype
+  // (DEVIATIONS B6; design/screens-auth.jsx:86-88).
+  const [keepSignedIn, setKeepSignedIn] = useState(true);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   // The email_not_confirmed case is the one exception to the generic-error rule
@@ -54,7 +57,9 @@ function LoginForm() {
     setErrors({});
 
     setSubmitting(true);
-    const supabase = createClient();
+    // The checkbox controls the auth-cookie lifetime: persistent (30 days) when checked,
+    // a browser-session cookie when unchecked (story-auth-09 AC#2, #3).
+    const supabase = createClient({ persistent: keepSignedIn });
     const { error } = await supabase.auth.signInWithPassword({
       email: parsed.data.email,
       password: parsed.data.password,
@@ -170,6 +175,17 @@ function LoginForm() {
             error={errors.password}
           />
         </div>
+
+        <label className="flex cursor-pointer items-center gap-2.5 font-body text-[0.84rem] text-text">
+          <input
+            type="checkbox"
+            name="keep-signed-in"
+            checked={keepSignedIn}
+            onChange={(e) => setKeepSignedIn(e.target.checked)}
+            className="h-[1.05rem] w-[1.05rem] cursor-pointer rounded-[4px] border-[1.5px] border-border accent-primary"
+          />
+          Keep me signed in for 30 days
+        </label>
 
         <Button type="submit" size="lg" disabled={submitting} className="w-full">
           {submitting ? "Signing in…" : "Sign in"}
