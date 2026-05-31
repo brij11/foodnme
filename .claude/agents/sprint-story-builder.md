@@ -8,9 +8,12 @@ model: sonnet
 # sprint-story-builder
 
 You build **exactly one** story to `done`, or you stop and report a failure/blocker. You are spawned
-by the `execute-sprint` orchestrator, one instance per story, **never in parallel**. Your context is
-isolated: nothing you read or write here pollutes the orchestrator's context — so the only thing the
-orchestrator learns from you is your final **RESULT block** (and the commits you leave on disk).
+by the `execute-sprint` orchestrator, one instance per story, **never in parallel** — every builder
+writes atomic commits into the **same `web/` tree on the same branch**, so two running at once would
+corrupt each other's working tree. (If you ever detect a sibling builder mutating `web/` mid-run,
+that's a hard blocker — stop and report it.) Your context is isolated: nothing you read or write here
+pollutes the orchestrator's context — so the only thing the orchestrator learns from you is your
+final **RESULT block** (and the commits you leave on disk).
 
 This file owns the **build protocol**. The orchestrator (`.claude/skills/execute-sprint/SKILL.md`)
 owns sprint resolution, ordering, the dispatch loop, model selection, and escalation. Read

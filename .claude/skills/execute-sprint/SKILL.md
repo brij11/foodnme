@@ -15,7 +15,7 @@ It is the gate that turns a `ready` (analyzed) story into a `done` one. It reuse
 
 Per-story work runs in subagents so the orchestrator's context stays tiny (it holds only story ids, pass/fail, and commit SHAs — never the file dumps, generated code, or test output). This both isolates context and lets each story run on the right-sized model.
 
-- **Run the orchestrator itself on a cheap model** (Haiku or Sonnet). It only dispatches, parses each subagent's `RESULT` block, and regenerates `INDEX.md` — no heavy reasoning.
+- **Run the orchestrator on Sonnet — not Haiku.** The work is light (dispatch, parse each subagent's `RESULT` block, regenerate `INDEX.md` — no heavy reasoning), but the orchestrator must reliably hold the serial-dispatch HARD RULE (exactly one `Agent` call per message; never batch builders) against the harness's strong "batch independent agents for speed" default. Instruction-following under that competing pull is where Haiku slips, so **Sonnet is the floor.** Opus is unnecessary here.
 - **Each story's model is chosen by `analyze-sprint`** and recorded in the story's `exec_model` frontmatter field: `sonnet` (default) or `opus` (set when the story is complex — schema/migration, cross-story data coordination, algorithmic/stateful logic, spec reconciliation, security surface, or a net-new pattern). A story with no `exec_model` field defaults to **`sonnet`**.
 - **Auto-escalation:** if a Sonnet subagent returns `status: failed` (couldn't green the gate within its 3 fix attempts), the orchestrator escalates that one story to **Opus** (see *Escalation* below). Opus failing too → the story is `blocked`.
 - The subagent's `model` is set via the Agent tool's `model` parameter per spawn; it overrides the `sonnet` default in the agent definition.
@@ -74,16 +74,35 @@ The scaffold is **not** a story — it's the substrate Sprint-1 stories build on
 
 ## Dispatch loop — one subagent per story
 
-Process **one story at a time**, in the dependency order from pre-flight. **Never batch and never run two builders in parallel** — await each story's subagent fully before dispatching the next (sequential execution is required; it also means no git contention, so no worktrees are needed). The orchestrator does **not** read the story's design/docs or write any `web/` code itself — that all happens inside the subagent.
+> ### ⚠️ HARD RULE — exactly ONE `Agent` tool-call per assistant message. No exceptions.
+> This is the single source of truth for dispatch concurrency; every other "sequential"
+> mention in this doc points here.
+>
+> - **Never** place two `sprint-story-builder` calls in the same message, and **never** map
+>   the story list into a batch/array of Agent calls.
+> - The harness runs same-message tool-uses **concurrently**. Two builders at once write
+>   atomic commits into the **same `web/` tree on the same branch** → corrupted working
+>   tree, broken dependency order, and a broken Sonnet→Opus escalation reset (which does
+>   `git checkout -- .` / `git clean -fd` and would wipe a sibling's in-flight work).
+> - **This overrides any general guidance about batching independent agents for speed.**
+>   Story builders are **not** independent — they share one branch. There is no speed win
+>   worth a corrupted tree.
+> - **The shape is strictly serial:** spawn one → await its `RESULT` block → handle it →
+>   *only then* spawn the next. One builder is active at any instant; never two.
 
-For each story:
+Process the ordered story list as a **serial loop** (not a fan-out). The orchestrator does
+**not** read the story's design/docs or write any `web/` code itself — that all happens
+inside the subagent. Walk the stories in the dependency order from pre-flight; for the
+**current** story:
 
 1. **Read just the routing facts from the story file** — its `exec_model` (default `sonnet` if absent) and confirm its `dependencies:` are all `done` (a not-`done` dependency is a hard blocker — halt). Do **not** read the design or docs here; the subagent does.
-2. **Spawn a `sprint-story-builder` subagent** via the Agent tool, with `model` set to the story's `exec_model`, passing a prompt that contains: the `story_id`, the story file path, `exec_model`, and `escalation: false`. The subagent runs the Steps 0–5 build protocol in its own context and returns a `RESULT` block.
-3. **Parse the `RESULT` block** and act on `status`:
-   - **`green`** → confirm the evidence cheaply (`git log -1` shows the story's final commit; the `tests:` line is a pass summary). Print the checkpoint line and continue to the next story. Do **not** re-run the suite in the orchestrator — that would re-import the cost the subagent just isolated.
+2. **Pre-dispatch self-check:** confirm the *previous* story's `RESULT` was already received and handled (or this is the first story). If you are about to emit more than one `Agent` call in this message — **stop and emit only the first.**
+3. **Spawn exactly one `sprint-story-builder` subagent** via the Agent tool, with `model` set to the story's `exec_model`, passing a prompt that contains: the `story_id`, the story file path, `exec_model`, and `escalation: false`. The subagent runs the Steps 0–5 build protocol in its own context and returns a `RESULT` block.
+4. **Parse the `RESULT` block** and act on `status`:
+   - **`green`** → confirm the evidence cheaply (`git log -1` shows the story's final commit; the `tests:` line is a pass summary). Print the checkpoint line. Do **not** re-run the suite in the orchestrator — that would re-import the cost the subagent just isolated.
    - **`failed`** → the gate couldn't be greened within the subagent's 3 attempts. If the model was `sonnet`, **escalate** (below). If it was already `opus`, treat as a hard blocker: the story is `blocked` — halt.
    - **`blocked`** → a hard blocker the subagent already recorded in the story's `## Notes` (with `status: blocked`). Halt and report.
+5. **STOP — barrier before the next story.** Do **not** begin the next story until this one's `RESULT` has been parsed, acted on, and its checkpoint line printed. Then return to step 1 for the next story (a fresh assistant message, a single new Agent call).
 
 ### Escalation — Sonnet failed → retry on Opus
 
@@ -118,8 +137,8 @@ The **subagent** marks the in-place state for blockers it detects (`status: bloc
 
 ## Operating rules
 
-- **One subagent at a time, dependency-first, never parallel.** Await each story's builder before dispatching the next. Never build a story before the stories it depends on are `done`.
-- **The orchestrator stays thin and cheap.** It dispatches, parses `RESULT` blocks, escalates, and regenerates `INDEX.md` — it never reads the design/docs or writes per-story `web/` code itself (that's the subagent's job, in isolated context). The **one exception is the first-run Scaffold bootstrap**, which the orchestrator performs before any story. Run it on Haiku/Sonnet (bump to a stronger model just for the Scaffold if needed).
+- **One subagent at a time, dependency-first, never parallel** — see the HARD RULE in *Dispatch loop* (exactly one `Agent` call per message). Await each story's builder fully before dispatching the next; never two builders at once. Never build a story before the stories it depends on are `done`.
+- **The orchestrator stays thin and cheap.** It dispatches, parses `RESULT` blocks, escalates, and regenerates `INDEX.md` — it never reads the design/docs or writes per-story `web/` code itself (that's the subagent's job, in isolated context). The **one exception is the first-run Scaffold bootstrap**, which the orchestrator performs before any story. Run the orchestrator on **Sonnet** (its floor — see *Model & orchestration*; never Haiku, which slips on the serial-dispatch HARD RULE); bump to a stronger model just for the Scaffold if needed.
 - **Per-story model = the story's `exec_model`** (default `sonnet`), escalated to `opus` on a Sonnet `failed`. The orchestrator records `escalated: true` when it escalates.
 - **Only `analyzed: true` stories execute.** A `draft`/un-analyzed story is never built — route it to `/analyze-sprint`.
 - **Code obeys `TECHNICAL-REQUIREMENTS.md`** (highest precedence: stack, structure, schema, auth, API, routing, security). Visuals follow `UI-DESIGN-HANDOFF.md` + the linked prototype screens. The prototype never overrides the tech spec.
