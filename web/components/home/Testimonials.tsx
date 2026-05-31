@@ -42,7 +42,7 @@ export function Testimonials() {
               key={t.name}
               className="rounded-lg border border-border bg-card-bg p-7 shadow-card"
             >
-              <blockquote className="relative font-body text-[1.02rem] leading-relaxed text-text">
+              <blockquote className="relative font-display text-[1.02rem] leading-relaxed text-text">
                 <span aria-hidden="true" className="mr-1 font-display text-3xl leading-none text-accent">
                   &ldquo;
                 </span>
