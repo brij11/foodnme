@@ -72,4 +72,34 @@ describe("Footer (story-homepage-11 chrome parity)", () => {
     expect(exploreNav.querySelector('a[href="/jobs"]')).toBeTruthy();
     expect(exploreNav.querySelector('a[href="/experts"]')).toBeTruthy();
   });
+
+  it("brand logo uses dark text (text-text) not green — green-only-on-actions rule (AC#5)", () => {
+    const { container } = render(
+      <FooterNewsletterProvider>
+        <Footer />
+      </FooterNewsletterProvider>,
+    );
+    // The footer brand link is the first <a> in the footer brand column.
+    const brandLink = container.querySelector('footer a[href="/"]');
+    expect(brandLink, "Footer brand link missing").toBeTruthy();
+    // Logo text must use dark-olive text-text, never text-primary (UI-DESIGN-HANDOFF §4.1).
+    expect(brandLink!.className).toContain("text-text");
+    expect(brandLink!.className).not.toContain("text-primary");
+  });
+
+  it("brand dot uses bg-accent (amber), not bg-primary (green) — green-only-on-actions (AC#5)", () => {
+    const { container } = render(
+      <FooterNewsletterProvider>
+        <Footer />
+      </FooterNewsletterProvider>,
+    );
+    const brandLink = container.querySelector('footer a[href="/"]');
+    expect(brandLink).toBeTruthy();
+    // The decorative dot is aria-hidden span inside the brand link.
+    const dot = brandLink!.querySelector('[aria-hidden="true"]');
+    expect(dot, "Brand dot span missing").toBeTruthy();
+    // Dot color is accent (amber), not primary (green) — decorative, not an action.
+    expect(dot!.className).toContain("bg-accent");
+    expect(dot!.className).not.toContain("bg-primary");
+  });
 });
