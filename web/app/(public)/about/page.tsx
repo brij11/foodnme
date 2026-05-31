@@ -52,7 +52,7 @@ const STATS = [
   { num: "120+", label: "Articles Published" },
   { num: "48", label: "Templates" },
   { num: "85+", label: "Businesses Helped" },
-  { num: "4,200+", label: "Newsletter Subscribers" },
+  { num: "4.2k", label: "Newsletter Subscribers" },
 ];
 
 const VALUES = [

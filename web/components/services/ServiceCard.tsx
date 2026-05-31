@@ -5,6 +5,9 @@ import type { Service } from "@/lib/services";
  * Services-page card (UI-DESIGN-HANDOFF.md §4.1). Per the green-rebalance, the icon and the
  * overline are **dark olive** (`--color-text`), NOT primary green — green is reserved for
  * actionable elements. "Learn more" jumps to the inquiry form (`#inquiry`, services-02).
+ *
+ * "Learn more" uses the ghost-button treatment: green text + trailing → that grows on hover,
+ * no underline — per prototype .btn-ghost (plan/design/styles.css:230-241, DEVIATIONS D6).
  */
 export function ServiceCard({ service }: { service: Service }) {
   return (
@@ -19,14 +22,12 @@ export function ServiceCard({ service }: { service: Service }) {
         {service.name}
       </h3>
       <p className="mt-2 font-body text-[0.88rem] leading-relaxed text-muted">{service.short}</p>
+      {/* Ghost-button treatment: transparent bg, primary text, arrow grows 4px right on hover */}
       <a
         href="#inquiry"
-        className="mt-4 inline-flex items-center gap-1 font-heading text-[0.8rem] font-bold text-primary hover:text-primary-deep"
+        className="mt-4 self-start font-heading text-[0.8rem] font-bold text-primary after:ml-1.5 after:inline-block after:content-['→'] after:transition-transform after:duration-200 hover:text-primary-deep hover:after:translate-x-1"
       >
         Learn more
-        <span className="transition-transform group-hover:translate-x-0.5">
-          <Icon name="arrow" size={12} stroke={2.4} />
-        </span>
       </a>
     </div>
   );

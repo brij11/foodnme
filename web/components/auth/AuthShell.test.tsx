@@ -12,7 +12,7 @@ const EXPECTED: Record<AuthContext, { heading: string; features: string[] }> = {
       "100+ active job listings across India",
       "Vetted experts available for short engagements",
       "Templates, articles, and weekly newsletter",
-      "Trusted by 4,200+ food-tech professionals",
+      "Trusted by 4.2k food-tech professionals",
     ],
   },
   register: {
