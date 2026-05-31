@@ -22,7 +22,12 @@ const variants: Record<Variant, string> = {
   primary: "bg-primary text-white hover:bg-primary-deep hover:-translate-y-px",
   outline:
     "bg-card-bg text-primary border-[1.5px] border-border hover:border-primary hover:bg-tag-safe-bg",
-  ghost: "bg-transparent text-primary underline underline-offset-[3px] hover:text-primary-deep",
+  // Arrow-grow-on-hover per prototype .btn-ghost::after (plan/design/styles.css:230-241).
+  // Trailing → shifts 4px right on hover via after:translate-x-1. No underline (DEVIATIONS B5).
+  ghost:
+    "bg-transparent text-primary " +
+    "after:content-['→'] after:ml-1.5 after:inline-block after:transition-transform after:duration-200 " +
+    "hover:text-primary-deep hover:after:translate-x-1",
 };
 
 const sizes: Record<Size, string> = {

@@ -46,3 +46,30 @@ describe("Footer (homepage-02)", () => {
     expect(screen.queryByLabelText("Newsletter")).not.toBeInTheDocument();
   });
 });
+
+describe("Footer (story-homepage-11 chrome parity)", () => {
+  it("Contact column includes a Newsletter link (DEVIATIONS B3, AC#1)", () => {
+    render(
+      <FooterNewsletterProvider>
+        <Footer />
+      </FooterNewsletterProvider>,
+    );
+    const contact = screen.getByRole("heading", { name: "Contact" }).closest("div");
+    expect(contact).not.toBeNull();
+    const newsletterLink = Array.from(contact!.querySelectorAll("a")).find(
+      (a) => a.textContent?.trim() === "Newsletter",
+    );
+    expect(newsletterLink, "Newsletter link missing from Contact column").toBeTruthy();
+  });
+
+  it("Explore column includes Jobs and Experts links (DEVIATIONS D1, AC#2)", () => {
+    render(
+      <FooterNewsletterProvider>
+        <Footer />
+      </FooterNewsletterProvider>,
+    );
+    const exploreNav = screen.getByRole("navigation", { name: "Explore" });
+    expect(exploreNav.querySelector('a[href="/jobs"]')).toBeTruthy();
+    expect(exploreNav.querySelector('a[href="/experts"]')).toBeTruthy();
+  });
+});

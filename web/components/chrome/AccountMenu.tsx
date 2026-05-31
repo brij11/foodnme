@@ -42,6 +42,14 @@ export function AccountMenu({ user, onSignOut }: { user: NavUser; onSignOut: () 
   const initials = expertInitials(user.name);
   const firstName = user.name.trim().split(/\s+/)[0] || "Account";
 
+  // Role-routed Settings destination per prototype ui.jsx:635 and story-homepage-11 notes.
+  const settingsHref =
+    user.role === "expert"
+      ? "/dashboard/expert"
+      : user.role === "employer"
+        ? "/dashboard/employer"
+        : "/dashboard/seeker";
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -84,6 +92,14 @@ export function AccountMenu({ user, onSignOut }: { user: NavUser; onSignOut: () 
             className="flex items-center gap-2.5 px-4 py-3 font-body text-[0.88rem] text-text hover:bg-surface-light"
           >
             <Icon name="user" size={15} stroke={1.8} /> Dashboard
+          </Link>
+          <Link
+            href={settingsHref}
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2.5 px-4 py-3 font-body text-[0.88rem] text-text hover:bg-surface-light"
+          >
+            <Icon name="settings" size={15} stroke={1.8} /> Settings
           </Link>
           <div className="border-t border-border" />
           <button

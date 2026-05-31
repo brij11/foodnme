@@ -14,8 +14,13 @@ describe("Button (AC#3)", () => {
     expect(screen.getByRole("button")).toHaveClass("bg-primary");
     rerender(<Button variant="outline">Go</Button>);
     expect(screen.getByRole("button").className).toContain("border-border");
+    // Ghost: arrow-grow-on-hover (DEVIATIONS B5, story-homepage-11); no bare underline class.
     rerender(<Button variant="ghost">Go</Button>);
-    expect(screen.getByRole("button").className).toContain("underline");
+    const ghost = screen.getByRole("button");
+    expect(ghost.className).toContain("text-primary");
+    expect(ghost.className).toContain("after:content-");
+    // No standalone "underline" token — affordance is trailing arrow, not text decoration
+    expect(ghost.className).not.toMatch(/(?<![:\w])underline(?!-)/u);
   });
 
   it("applies sizes and disabled state", () => {

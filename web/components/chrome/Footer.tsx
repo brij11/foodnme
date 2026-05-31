@@ -5,9 +5,12 @@ import { NewsletterBanner } from "@/components/newsletter/NewsletterBanner";
 import { useFooterNewsletter } from "./FooterNewsletterContext";
 
 // Footer columns: Brand · Explore · Topics · Contact (UI-DESIGN-HANDOFF.md §2.2).
+// Jobs + Experts included now that both surfaces are live (DEVIATIONS D1, story-homepage-11).
 const EXPLORE = [
   { label: "Knowledge Hub", href: "/blog" },
   { label: "Templates", href: "/templates" },
+  { label: "Jobs", href: "/jobs" },
+  { label: "Experts", href: "/experts" },
   { label: "Services", href: "/services" },
   { label: "About", href: "/about" },
 ];
@@ -63,6 +66,7 @@ export function Footer() {
             ))}
           </nav>
 
+          {/* Contact column: email, LinkedIn, Newsletter (DEVIATIONS B3, story-homepage-11) */}
           <div>
             <h2 className={colHeading}>Contact</h2>
             <a href="mailto:hello@foodnme.in" className={colLink}>
@@ -71,6 +75,9 @@ export function Footer() {
             <a href="https://www.linkedin.com" target="_blank" rel="noopener noreferrer" className={colLink}>
               LinkedIn
             </a>
+            <Link href="/#newsletter" className={colLink}>
+              Newsletter
+            </Link>
           </div>
         </div>
 
