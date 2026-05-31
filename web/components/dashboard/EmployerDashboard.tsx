@@ -7,13 +7,17 @@ import { DashboardShell, DashboardHeader, type DashboardTab } from "./DashboardS
 import { EmptyState } from "@/components/listing/EmptyState";
 import { Tag, type TagVariant } from "@/components/ui/Tag";
 import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
 import { PostJobModal } from "./PostJobModal";
+import { formatPostedDate } from "@/lib/jobs";
 
 export type EmployerJob = {
   id: string;
   title: string;
   status: string;
   applicant_count: number;
+  /** story-jobs-16 D8: posted date for the employer posted-jobs row. */
+  created_at: string;
 };
 
 export type ApplicantRow = {
@@ -40,6 +44,7 @@ const STATUS_TAG: Record<string, { variant: TagVariant; label: string }> = {
 const APP_STATUS_TAG: Record<string, { variant: TagVariant; label: string }> = {
   submitted: { variant: "neutral", label: "Submitted" },
   reviewed: { variant: "orange", label: "Reviewed" },
+  interview: { variant: "safe", label: "Interview" },
   rejected: { variant: "accent", label: "Closed" },
 };
 
@@ -53,7 +58,8 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-// Employer dashboard (story-jobs-04 listings; story-jobs-14 stats + applicant review).
+// Employer dashboard (story-jobs-04 listings; story-jobs-14 stats + applicant review;
+// story-jobs-16 D8 posted date + manage actions).
 export function EmployerDashboard({
   fullName,
   jobs,
@@ -98,26 +104,39 @@ export function EmployerDashboard({
         {jobs.map((job) => {
           const s = STATUS_TAG[job.status] ?? STATUS_TAG.pending!;
           return (
-            <div key={job.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card-bg px-5 py-4">
+            <div key={job.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card-bg px-5 py-4" data-testid="posted-job-row">
               <div className="min-w-0 flex-1">
                 <Link href={`/jobs/${job.id}`} className="font-heading text-[0.98rem] font-bold text-text hover:text-primary">
                   {job.title}
                 </Link>
+                {/* story-jobs-16 D8: posted date + applicant count (prototype screens-dashboard.jsx:220-224). */}
                 <p className="mt-0.5 font-body text-[0.78rem] text-muted" data-testid="applicant-count">
+                  Posted {formatPostedDate(job.created_at)} ·{" "}
                   {job.applicant_count} {job.applicant_count === 1 ? "applicant" : "applicants"}
                 </p>
               </div>
               <Tag variant={s.variant}>{s.label}</Tag>
-              {job.status !== "closed" ? (
-                <button
-                  type="button"
-                  onClick={() => closeJob(job.id)}
-                  disabled={closing === job.id}
-                  className="rounded-md border-[1.5px] border-border px-3 py-1.5 font-heading text-[0.74rem] font-bold text-muted hover:border-error hover:text-error disabled:opacity-50"
+              {/* story-jobs-16 D8: manage actions — View and Close (prototype screens-dashboard.jsx:226-230). */}
+              <div className="flex items-center gap-1.5">
+                <Link
+                  href={`/jobs/${job.id}`}
+                  aria-label="View job listing"
+                  className="inline-flex items-center justify-center rounded-md border-[1.5px] border-border p-1.5 text-muted hover:border-primary hover:text-primary"
                 >
-                  {closing === job.id ? "Closing…" : "Close"}
-                </button>
-              ) : null}
+                  <Icon name="eye" size={14} stroke={2} />
+                </Link>
+                {job.status !== "closed" ? (
+                  <button
+                    type="button"
+                    onClick={() => closeJob(job.id)}
+                    disabled={closing === job.id}
+                    aria-label="Close job listing"
+                    className="inline-flex items-center justify-center rounded-md border-[1.5px] border-border p-1.5 text-muted hover:border-error hover:text-error disabled:opacity-50"
+                  >
+                    <Icon name="trash" size={14} stroke={2} />
+                  </button>
+                ) : null}
+              </div>
             </div>
           );
         })}
@@ -131,9 +150,6 @@ export function EmployerDashboard({
         <DashboardHeader title="Employer dashboard" subtitle="Manage your job postings and review applicants." />
         <Button onClick={() => setModalOpen(true)}>Post a job</Button>
       </div>
-      {/* 3-card stats grid (story-auth-10). Avg. time to hire removed entirely per
-          UI-DESIGN-HANDOFF §3.8 — no "—" placeholder. Returns only when hire-event
-          timestamps are modeled (OQ#13). */}
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-3" data-testid="employer-stats">
         <StatCard label="Active listings" value={String(stats.activeListings)} />
         <StatCard label="Total applicants" value={String(stats.totalApplicants)} />

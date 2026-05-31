@@ -10,9 +10,11 @@ export type Resource = {
   file_type: string;
   is_free: boolean;
   download_count: number;
+  /** ISO-8601 date of upload / last revision. Rendered as "Last updated" on the detail page. */
+  created_at?: string;
 };
 
-const RESOURCE_COLUMNS = "id, title, slug, description, category, file_type, is_free, download_count";
+const RESOURCE_COLUMNS = "id, title, slug, description, category, file_type, is_free, download_count, created_at";
 
 /**
  * A single resource (template) by slug, or null if it does not exist. Used by the blog-05
@@ -57,8 +59,11 @@ export async function listResources(
   return (data as Resource[] | null) ?? [];
 }
 
-/** A featured template carries the `created_at` the homepage hero card uses for "Updated …". */
-export type FeaturedTemplate = Resource & { created_at: string };
+/**
+ * A featured template. `created_at` is optional in Resource; this alias narrows it to
+ * required for the homepage "Featured this week" block (story-homepage-07).
+ */
+export type FeaturedTemplate = Omit<Resource, "created_at"> & { created_at: string };
 
 /**
  * The single most-downloaded template for the homepage "Featured this week" block
@@ -70,7 +75,7 @@ export async function getFeaturedTemplate(): Promise<FeaturedTemplate | null> {
   const supabase = createPublicClient();
   const { data, error } = await supabase
     .from("resources")
-    .select(`${RESOURCE_COLUMNS}, created_at`)
+    .select(RESOURCE_COLUMNS)
     .order("download_count", { ascending: false })
     .limit(1);
   if (error) throw new Error(`getFeaturedTemplate failed: ${error.message}`);

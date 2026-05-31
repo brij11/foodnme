@@ -38,7 +38,7 @@ export default async function EmployerDashboardPage() {
     .eq("employer_id", user.id)
     .order("created_at", { ascending: false });
 
-  const ownJobRows = (ownJobs as { id: string; title: string; status: string }[] | null) ?? [];
+  const ownJobRows = (ownJobs as { id: string; title: string; status: string; created_at: string }[] | null) ?? [];
   const jobIds = ownJobRows.map((j) => j.id);
   const titleById = new Map(ownJobRows.map((j) => [j.id, j.title]));
 
@@ -80,6 +80,7 @@ export default async function EmployerDashboardPage() {
     id: j.id,
     title: j.title,
     status: j.status,
+    created_at: j.created_at,
     applicant_count: apps.filter((a) => a.job_id === j.id).length,
   }));
 

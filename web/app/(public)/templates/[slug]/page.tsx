@@ -65,7 +65,12 @@ export default async function TemplateDetailPage({ params }: { params: { slug: s
 
       <div className="grid items-start gap-10 lg:grid-cols-[1.5fr_1fr]">
         <div className="flex flex-col gap-6">
-          <WhatsIncluded description={template.description} />
+          <WhatsIncluded
+            description={template.description}
+            fileType={template.file_type}
+            downloadCount={template.download_count}
+            createdAt={template.created_at}
+          />
 
           <div className="rounded-lg border border-border bg-surface-light p-7">
             {/* primary-deep (not primary) on surface-light to clear the AA contrast gate (§1) */}

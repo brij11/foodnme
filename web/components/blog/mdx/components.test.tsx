@@ -36,11 +36,14 @@ describe("buildMdxComponents allowlist (blog-03 AC#6)", () => {
 });
 
 describe("custom MDX components (AC#2, #3)", () => {
-  it("PullQuote renders a styled blockquote", () => {
+  it("PullQuote renders an accent-bordered pull-quote div (blog-12 AC#1 / DEVIATIONS C5)", () => {
     render(<PullQuote>Quoted wisdom</PullQuote>);
-    const bq = screen.getByText("Quoted wisdom");
-    expect(bq.tagName).toBe("BLOCKQUOTE");
-    expect(bq.className).toContain("border-primary");
+    const el = screen.getByText("Quoted wisdom");
+    // Rendered as a div (not blockquote) with accent/orange left border.
+    // The green MDX <blockquote> uses border-primary; PullQuote uses border-accent.
+    expect(el.tagName).toBe("DIV");
+    expect(el.className).toContain("border-accent");
+    expect(el.className).not.toContain("border-primary");
   });
 
   it("CTABox renders title/body and a button linking to ctaHref", () => {

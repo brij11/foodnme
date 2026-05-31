@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { ArticleCard } from "./ArticleCard";
 import { EmptyState } from "./EmptyState";
 import { Pagination } from "./Pagination";
+import { PageHeader } from "./PageHeader";
 import type { ArticleListItem } from "@/lib/articles";
 
 const article: ArticleListItem = {
@@ -27,6 +28,36 @@ const article: ArticleListItem = {
   published_at: "2026-05-12T09:00:00Z",
 };
 
+describe("PageHeader category overline + sub-line (blog-12 AC#3 / DEVIATIONS D3)", () => {
+  it("renders cat.label as overline, not hardcoded Knowledge Hub", () => {
+    render(<PageHeader overline="Food Safety" title="Food Safety Articles" />);
+    expect(screen.getByText("Food Safety")).toBeInTheDocument();
+    expect(screen.queryByText("Knowledge Hub")).toBeNull();
+  });
+
+  it("renders the count sub-line n articles on label sorted by recency", () => {
+    render(
+      <PageHeader
+        overline="Food Safety"
+        title="Food Safety Articles"
+        sub="7 articles on food safety — sorted by recency."
+      />,
+    );
+    expect(screen.getByText("7 articles on food safety — sorted by recency.")).toBeInTheDocument();
+  });
+
+  it("uses singular article when count is 1", () => {
+    render(
+      <PageHeader
+        overline="Packaging"
+        title="Packaging Articles"
+        sub="1 article on packaging — sorted by recency."
+      />,
+    );
+    expect(screen.getByText("1 article on packaging — sorted by recency.")).toBeInTheDocument();
+  });
+});
+
 describe("ArticleCard (AC#6)", () => {
   it("renders category tag (rotation), read-time, title, excerpt, author/date, link", () => {
     render(<ArticleCard article={article} />);
@@ -41,7 +72,7 @@ describe("ArticleCard (AC#6)", () => {
 });
 
 describe("EmptyState (AC#9, §5.4)", () => {
-  it("renders title + message + action — never bare 'No results'", () => {
+  it("renders title + message + action — never bare No results", () => {
     render(
       <EmptyState
         variant="filter"

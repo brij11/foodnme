@@ -65,3 +65,24 @@ describe("ExpertCard enrichment (story-experts-09)", () => {
     expect(screen.getByText("Verified")).toBeInTheDocument();
   });
 });
+
+describe("ExpertCard parity fixes (story-experts-12)", () => {
+  it("AC#4/DEVIATIONS C4 — specialization tags use neutral variant, not outline-green", () => {
+    render(<ExpertCard expert={base} />);
+    const tag = screen.getByText("Food Safety");
+    // neutral variant: bg-tag-neutral-bg + text-tag-neutral-text; outline-green would have border-primary
+    expect(tag.className).toContain("bg-tag-neutral-bg");
+    expect(tag.className).not.toContain("border-primary");
+  });
+
+  it("AC#5/DEVIATIONS B19 — unavailable experts show 'Busy', not 'Unavailable'", () => {
+    render(<ExpertCard expert={{ ...base, is_available: false }} />);
+    expect(screen.getByTestId("availability")).toHaveTextContent("Busy");
+    expect(screen.getByTestId("availability")).not.toHaveTextContent("Unavailable");
+  });
+
+  it("AC#5 — available experts still show 'Available'", () => {
+    render(<ExpertCard expert={{ ...base, is_available: true }} />);
+    expect(screen.getByTestId("availability")).toHaveTextContent("Available");
+  });
+});

@@ -2,9 +2,16 @@ import type { Metadata } from "next";
 import { listExperts } from "@/lib/experts";
 import { PageHeader } from "@/components/listing/PageHeader";
 import { ListingShell } from "@/components/listing/ListingShell";
+import { SortSelect } from "@/components/listing/SortSelect";
 import { ExpertsFilterSidebar } from "@/components/experts/ExpertsFilterSidebar";
 import { ExpertCard } from "@/components/experts/ExpertCard";
 import { EmptyState } from "@/components/listing/EmptyState";
+
+/** Sort options for the experts listing — mirrors design/screens-experts.jsx:81-84 (DEVIATIONS A2). */
+const EXPERT_SORT_OPTIONS = [
+  { value: "rating", label: "Top rated" },
+  { value: "experience", label: "Most experienced" },
+] as const;
 
 export const metadata: Metadata = {
   title: "Find food-tech experts — foodnme",
@@ -23,6 +30,8 @@ type SearchParams = {
   specialization?: string | string[];
   location?: string;
   available?: string;
+  verified?: string;
+  sort?: string;
 };
 
 export default async function ExpertsPage({ searchParams }: { searchParams: SearchParams }) {
@@ -35,8 +44,12 @@ export default async function ExpertsPage({ searchParams }: { searchParams: Sear
         : [searchParams.specialization];
   const location = typeof searchParams.location === "string" ? searchParams.location : undefined;
   const available = searchParams.available === "true";
+  const verified = searchParams.verified === "true";
+  // story-experts-12 (DEVIATIONS A2): sort backed by `rating` (default) or `experience_years`.
+  const sortBy: "rating" | "experience" =
+    searchParams.sort === "experience" ? "experience" : "rating";
 
-  const experts = await listExperts({ q, specializations, location, available });
+  const experts = await listExperts({ q, specializations, location, available, verified, sortBy });
 
   const sidebar = (
     <ExpertsFilterSidebar
@@ -44,11 +57,13 @@ export default async function ExpertsPage({ searchParams }: { searchParams: Sear
       specializations={specializations}
       location={location ?? ""}
       available={available}
+      verified={verified}
     />
   );
 
-  // Filter signature: changing any filter remounts the grid so the stagger re-runs (§4.10).
-  const gridKey = JSON.stringify({ q, specializations, location, available });
+  // Filter + sort signature: changing any filter or sort remounts the grid so the stagger
+  // re-runs (§4.10, TECHNICAL-REQUIREMENTS.md §8).
+  const gridKey = JSON.stringify({ q, specializations, location, available, verified, sortBy });
 
   return (
     <div className="mx-auto max-w-content px-6 lg:px-12">
@@ -59,11 +74,18 @@ export default async function ExpertsPage({ searchParams }: { searchParams: Sear
       />
 
       <ListingShell sidebar={sidebar}>
+        {/* Result count + sort — story-experts-12 (DEVIATIONS A2) adds the sort dropdown. */}
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <p data-testid="result-count" className="font-body text-[0.85rem] text-muted">
             <strong className="font-semibold text-text">{experts.length}</strong>{" "}
             {experts.length === 1 ? "expert" : "experts"} found
           </p>
+          {/* Sort control mirrors design/screens-experts.jsx:79-85 (DEVIATIONS A2). */}
+          <SortSelect
+            options={[...EXPERT_SORT_OPTIONS]}
+            defaultValue={sortBy}
+            srLabel="Sort experts by"
+          />
         </div>
 
         {experts.length > 0 ? (

@@ -4,6 +4,7 @@ import { listJobs, JOBS_PAGE_SIZE } from "@/lib/jobs";
 import { PageHeader } from "@/components/listing/PageHeader";
 import { ListingShell } from "@/components/listing/ListingShell";
 import { JobsFilterSidebar } from "@/components/jobs/JobsFilterSidebar";
+import { SalarySliderIsland } from "@/components/jobs/SalarySliderIsland";
 import { JobCard } from "@/components/jobs/JobCard";
 import { EmptyState } from "@/components/listing/EmptyState";
 
@@ -40,6 +41,8 @@ export default async function JobsPage({ searchParams }: { searchParams: SearchP
   const { jobs, total } = await listJobs({ q, jobTypes, experienceLevels, location, salaryMin, sort, page });
   const totalPages = Math.max(1, Math.ceil(total / JOBS_PAGE_SIZE));
 
+  // story-jobs-16 D9: SalarySliderIsland injected for live LPA readout.
+  // story-jobs-16 B13: sort control moved to results header.
   const sidebar = (
     <JobsFilterSidebar
       q={q ?? ""}
@@ -47,11 +50,10 @@ export default async function JobsPage({ searchParams }: { searchParams: SearchP
       experienceLevels={experienceLevels}
       location={location ?? ""}
       salaryMin={salaryMin}
-      sort={sort}
+      sliderIsland={<SalarySliderIsland initialValue={salaryMin} />}
     />
   );
 
-  // Build a page link preserving the current filters.
   function pageHref(p: number): string {
     const sp = new URLSearchParams();
     if (q) sp.set("q", q);
@@ -76,10 +78,39 @@ export default async function JobsPage({ searchParams }: { searchParams: SearchP
       />
 
       <ListingShell sidebar={sidebar}>
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        {/* Results header: count + sort control.
+            story-jobs-16 B13: sort moved from sidebar to results header (DEVIATIONS B13). */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <p data-testid="result-count" className="font-body text-[0.85rem] text-muted">
             <strong className="font-semibold text-text">{total}</strong> {total === 1 ? "job" : "jobs"} found
           </p>
+          <form method="get" action="/jobs" className="flex items-center gap-2" data-testid="sort-form">
+            {q ? <input type="hidden" name="q" value={q} /> : null}
+            {jobTypes.map((t) => <input key={t} type="hidden" name="job_type" value={t} />)}
+            {experienceLevels.map((l) => <input key={l} type="hidden" name="experience_level" value={l} />)}
+            {location ? <input type="hidden" name="location" value={location} /> : null}
+            {salaryMin > 0 ? <input type="hidden" name="salary_min" value={salaryMin} /> : null}
+            <label htmlFor="sort-select" className="font-body text-[0.78rem] text-muted">
+              Sort:
+            </label>
+            <select
+              id="sort-select"
+              name="sort"
+              defaultValue={sort}
+              aria-label="Sort jobs"
+              className="rounded-md border-[1.5px] border-border bg-white px-3 py-1.5 font-body text-[0.82rem] text-text focus:border-primary focus:outline-none"
+              data-testid="sort-select"
+            >
+              <option value="recent">Most recent</option>
+              <option value="salary">Highest salary</option>
+            </select>
+            <button
+              type="submit"
+              className="rounded-md border-[1.5px] border-border bg-white px-2.5 py-1.5 font-body text-[0.78rem] text-muted hover:border-primary hover:text-primary"
+            >
+              Go
+            </button>
+          </form>
         </div>
 
         {jobs.length > 0 ? (

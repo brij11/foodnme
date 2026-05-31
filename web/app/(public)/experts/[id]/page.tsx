@@ -138,17 +138,16 @@ export default async function ExpertDetailPage({ params }: { params: { id: strin
           {expert.engagement_types.length > 0 ? (
             <section data-testid="engagement-types">
               <h3 className="mt-8 font-heading text-[1.1rem] font-bold text-text">Engagement types</h3>
-              <div className="mt-3 flex flex-col gap-3">
+              {/* 3-up card grid per design (screens-experts.jsx:173-186 / DEVIATIONS B12) */}
+              <div className="mt-3.5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {expert.engagement_types.map((e) => (
                   <div
                     key={e.kind}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card-bg px-5 py-4"
+                    className="flex flex-col rounded-lg border border-border bg-card-bg p-[18px]"
                   >
-                    <div className="min-w-0">
-                      <div className="font-heading text-[0.95rem] font-bold text-text">{e.title}</div>
-                      <p className="mt-0.5 font-body text-[0.84rem] text-muted">{e.desc}</p>
-                    </div>
-                    <span className="font-heading text-[0.92rem] font-bold text-primary">{e.price}</span>
+                    <div className="font-heading text-[0.95rem] font-bold text-text">{e.title}</div>
+                    <p className="mb-3.5 mt-2 font-body text-[0.84rem] text-muted">{e.desc}</p>
+                    <div className="mt-auto font-heading text-[0.92rem] font-bold text-text">{e.price}</div>
                   </div>
                 ))}
               </div>
@@ -156,9 +155,18 @@ export default async function ExpertDetailPage({ params }: { params: { id: strin
           ) : null}
         </div>
 
+        {/* Quick-stats aside — order aligned to design (screens-experts.jsx:191-198 / DEVIATIONS D12):
+            Experience → Rating/Reviews → Rate → Location → Response time.
+            Rating/reviews hidden for unrated experts ("New"); response_time hidden when absent. */}
         <aside className="h-fit rounded-lg border border-border bg-card-bg p-6">
           <h2 className="mb-4 font-heading text-[0.95rem] font-bold text-text">Quick stats</h2>
           <dl className="flex flex-col gap-3" data-testid="quick-stats">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <dt className="font-body text-[0.82rem] text-muted">Experience</dt>
+              <dd className="font-heading text-[0.86rem] font-bold text-text">
+                {expert.experience_years} years
+              </dd>
+            </div>
             {expert.review_count > 0 && expert.rating != null ? (
               <>
                 <div className="flex items-center justify-between border-b border-border pb-3">
@@ -174,30 +182,26 @@ export default async function ExpertDetailPage({ params }: { params: { id: strin
                 </div>
               </>
             ) : null}
-            {expert.response_time ? (
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <dt className="font-body text-[0.82rem] text-muted">Response time</dt>
-                <dd className="font-heading text-[0.86rem] font-bold text-text">{expert.response_time}</dd>
-              </div>
-            ) : null}
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <dt className="font-body text-[0.82rem] text-muted">Experience</dt>
-              <dd className="font-heading text-[0.86rem] font-bold text-text">
-                {expert.experience_years} years
-              </dd>
-            </div>
             <div className="flex items-center justify-between border-b border-border pb-3">
               <dt className="font-body text-[0.82rem] text-muted">Rate</dt>
               <dd className="font-heading text-[0.86rem] font-bold text-text">
                 {formatHourlyRate(expert.hourly_rate)}
               </dd>
             </div>
-            <div className="flex items-center justify-between">
+            <div
+              className={`flex items-center justify-between${expert.response_time ? " border-b border-border pb-3" : ""}`}
+            >
               <dt className="font-body text-[0.82rem] text-muted">Location</dt>
               <dd className="font-heading text-[0.86rem] font-bold text-text">
                 {expert.location.split(" · ")[0]}
               </dd>
             </div>
+            {expert.response_time ? (
+              <div className="flex items-center justify-between">
+                <dt className="font-body text-[0.82rem] text-muted">Response time</dt>
+                <dd className="font-heading text-[0.86rem] font-bold text-text">{expert.response_time}</dd>
+              </div>
+            ) : null}
           </dl>
         </aside>
       </div>

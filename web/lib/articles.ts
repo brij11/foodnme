@@ -90,6 +90,11 @@ export async function listArticles(opts: {
   category?: string;
   page?: number;
   sort?: ArticleSort;
+  /**
+   * Exclude a single article slug from the results — used by the blog listing (story-blog-10)
+   * when a featured editorial slot is rendered above the grid so the article doesn't appear twice.
+   */
+  excludeSlug?: string;
 }): Promise<ArticleListResult> {
   const page = opts.page && opts.page >= 1 ? opts.page : 1;
   const pageSize = ARTICLES_PAGE_SIZE;
@@ -106,6 +111,9 @@ export async function listArticles(opts: {
 
   if (opts.category && opts.category !== "all") {
     query = query.eq("category", opts.category);
+  }
+  if (opts.excludeSlug) {
+    query = query.neq("slug", opts.excludeSlug);
   }
 
   const { data, count, error } = await query;

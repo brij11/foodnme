@@ -2,21 +2,27 @@ import { Icon } from "@/components/ui/Icon";
 import { SPECIALIZATIONS } from "@/lib/experts";
 
 /**
- * Experts directory filter rail (story-experts-01). A plain GET form (no client JS) so the
- * page stays SSR-with-searchParams: free-text `q`, specialization multi-select, location ILIKE,
- * and an "Available now" toggle. The prototype's "Verified only" toggle + rating sort are
- * dropped (no rating column, §4.2). Current selections re-hydrate from props.
+ * Experts directory filter rail (story-experts-01, story-experts-12). A plain GET form (no
+ * client JS) so the page stays SSR-with-searchParams: free-text `q`, "Available now" toggle,
+ * "Verified experts only" toggle (filters on `is_featured` — story-experts-12, DEVIATIONS A1),
+ * specialization multi-select, and location ILIKE. The earlier comment claiming "no rating
+ * column, §4.2" was incorrect — `rating`, `review_count`, and `is_featured` all exist on the
+ * `experts` table (TECHNICAL-REQUIREMENTS.md §4.2 lines 140-144). Current selections
+ * re-hydrate from props.
  */
 export function ExpertsFilterSidebar({
   q = "",
   specializations = [],
   location = "",
   available = false,
+  verified = false,
 }: {
   q?: string;
   specializations?: string[];
   location?: string;
   available?: boolean;
+  /** "Verified experts only" — filters on `is_featured = true` (story-experts-12 / DEVIATIONS A1). */
+  verified?: boolean;
 }) {
   const sectionHead =
     "mb-3 border-b border-border pb-2.5 font-heading text-[0.7rem] font-bold uppercase tracking-[0.12em] text-muted";
@@ -44,10 +50,16 @@ export function ExpertsFilterSidebar({
 
       <div>
         <h2 className={sectionHead}>Quick filters</h2>
-        <label className="flex items-center gap-2.5 font-body text-[0.86rem] text-text">
-          <input type="checkbox" name="available" value="true" defaultChecked={available} />
-          Available now
-        </label>
+        <div className="space-y-2.5">
+          <label className="flex items-center gap-2.5 font-body text-[0.86rem] text-text">
+            <input type="checkbox" name="available" value="true" defaultChecked={available} />
+            Available now
+          </label>
+          <label className="flex items-center gap-2.5 font-body text-[0.86rem] text-text">
+            <input type="checkbox" name="verified" value="true" defaultChecked={verified} />
+            Verified experts only
+          </label>
+        </div>
       </div>
 
       <div>

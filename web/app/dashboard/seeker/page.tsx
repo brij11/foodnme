@@ -10,7 +10,8 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const FILTERS = new Set(["submitted", "reviewed", "rejected"]);
+// story-jobs-16: `interview` added as fourth status (DEVIATIONS C6).
+const FILTERS = new Set(["submitted", "reviewed", "interview", "rejected"]);
 
 export default async function SeekerDashboardPage({
   searchParams,
@@ -31,8 +32,6 @@ export default async function SeekerDashboardPage({
 
   const filter = searchParams.status && FILTERS.has(searchParams.status) ? searchParams.status : "all";
 
-  // Service role joins jobs so a closed job's title still shows (the seeker can't read closed
-  // jobs via RLS). The seeker is already authenticated above.
   const svc = createServiceClient();
   let query = svc
     .from("applications")
@@ -47,20 +46,20 @@ export default async function SeekerDashboardPage({
     job: Array.isArray(a.job) ? (a.job[0] ?? null) : a.job,
   }));
 
-  // Stats are derived from ALL of the seeker's applications (unfiltered), not the filtered list.
   const { data: statusRows } = await svc
     .from("applications")
     .select("status")
     .eq("applicant_id", user.id);
-  const stats: SeekerStats = { total: 0, submitted: 0, reviewed: 0, rejected: 0, saved: 0 };
+  // story-jobs-16: `interview` added as fourth status (DEVIATIONS C6).
+  const stats: SeekerStats = { total: 0, submitted: 0, reviewed: 0, interview: 0, rejected: 0, saved: 0 };
   for (const r of (statusRows as { status: string }[] | null) ?? []) {
     stats.total += 1;
     if (r.status === "submitted") stats.submitted += 1;
     else if (r.status === "reviewed") stats.reviewed += 1;
+    else if (r.status === "interview") stats.interview += 1;
     else if (r.status === "rejected") stats.rejected += 1;
   }
-  // Saved jobs (story-jobs-15): own saved_items via RLS, then the job rows (service role so a
-  // since-closed saved job still renders its title).
+
   const { data: savedRows } = await supabase
     .from("saved_items")
     .select("item_id, saved_at")
@@ -71,12 +70,12 @@ export default async function SeekerDashboardPage({
 
   let savedJobs: SavedJob[] = [];
   if (savedIds.length > 0) {
+    // story-jobs-16 D7: include salary columns so the saved-job row can show the salary line.
     const { data: sj } = await svc
       .from("jobs")
-      .select("id, title, company_name, location")
+      .select("id, title, company_name, location, salary_min, salary_max")
       .in("id", savedIds);
     const byId = new Map((sj as SavedJob[] | null)?.map((j) => [j.id, j]) ?? []);
-    // Preserve saved-at ordering.
     savedJobs = savedIds.map((id) => byId.get(id)).filter((j): j is SavedJob => Boolean(j));
   }
 

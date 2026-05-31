@@ -110,6 +110,12 @@ export function ExpertDashboard({
             title="Expert dashboard"
             subtitle="Keep your profile fresh, manage inquiries, and toggle availability."
           />
+          {/* story-experts-13 AC3/B11: availability toggle on overview header per design */}
+          {expert ? (
+            <div className="mb-6">
+              <AvailabilityToggle expertId={expert.id} initial={expert.is_available} />
+            </div>
+          ) : null}
           {expert ? (
             // 4-card stats grid (story-experts-11). No fabricated metrics — profile views /
             // active engagements aren't tracked, so they're omitted entirely.
@@ -117,7 +123,7 @@ export function ExpertDashboard({
               <StatCard icon="mail" label="Inquiries" value={String(inquiries.length)} />
               <StatCard
                 icon="star"
-                label="Avg rating"
+                label="Avg. rating"
                 value={expert.review_count > 0 && expert.rating != null ? expert.rating.toFixed(1) : "—"}
               />
               <StatCard

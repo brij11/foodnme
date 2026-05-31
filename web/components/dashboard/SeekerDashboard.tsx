@@ -5,6 +5,7 @@ import { DashboardShell, DashboardHeader, type DashboardTab } from "./DashboardS
 import { EmptyState } from "@/components/listing/EmptyState";
 import { Tag, type TagVariant } from "@/components/ui/Tag";
 import { cn } from "@/lib/utils/cn";
+import { formatSalary } from "@/lib/jobs";
 
 export type ApplicationRow = {
   id: string;
@@ -17,11 +18,21 @@ export type SeekerStats = {
   total: number;
   submitted: number;
   reviewed: number;
+  /** interview: fourth status value added story-jobs-16 (DEVIATIONS C6). */
+  interview: number;
   rejected: number;
   saved: number;
 };
 
-export type SavedJob = { id: string; title: string; company_name: string; location: string };
+/** story-jobs-16 D7: salary columns added so the saved-job row can show the salary line. */
+export type SavedJob = {
+  id: string;
+  title: string;
+  company_name: string;
+  location: string;
+  salary_min: number | null;
+  salary_max: number | null;
+};
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -37,6 +48,7 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
 const STATUS_TAG: Record<string, { variant: TagVariant; label: string }> = {
   submitted: { variant: "neutral", label: "Submitted" },
   reviewed: { variant: "orange", label: "Reviewed" },
+  interview: { variant: "safe", label: "Interview" },
   rejected: { variant: "accent", label: "Closed" },
 };
 
@@ -44,10 +56,11 @@ const FILTERS = [
   { id: "all", label: "All" },
   { id: "submitted", label: "Submitted" },
   { id: "reviewed", label: "Reviewed" },
+  { id: "interview", label: "Interview" },
   { id: "rejected", label: "Rejected" },
 ];
 
-// Seeker dashboard: applications tracker (story-jobs-07).
+// Seeker dashboard: applications tracker (story-jobs-07, updated story-jobs-16).
 export function SeekerDashboard({
   fullName,
   applications,
@@ -68,14 +81,11 @@ export function SeekerDashboard({
       <>
         <DashboardHeader title={`Welcome back, ${firstName}.`} subtitle="Track every role you've applied to." />
 
-        {/* 2-card stats grid (story-auth-10). Profile views + Match score removed entirely per
-            UI-DESIGN-HANDOFF §3.8 — no "—" placeholder. Returns only when view-event tracking
-            + match-score definition land (OQ#13). */}
         <div className="mb-6 grid grid-cols-2 gap-3" data-testid="seeker-stats">
           <StatCard
             label="Applications"
             value={String(stats.total)}
-            sub={`${stats.submitted} submitted · ${stats.reviewed} reviewed · ${stats.rejected} closed`}
+            sub={`${stats.submitted} submitted · ${stats.reviewed} reviewed · ${stats.interview} interview · ${stats.rejected} closed`}
           />
           <StatCard label="Saved jobs" value={String(stats.saved)} />
         </div>
@@ -156,15 +166,16 @@ export function SeekerDashboard({
                     <Link href={`/jobs/${j.id}`} className="font-heading text-[0.98rem] font-bold text-text hover:text-primary">
                       {j.title}
                     </Link>
-                    <p className="mt-0.5 font-body text-[0.78rem] text-muted">
-                      {j.company_name} · {j.location}
+                    <p className="mt-0.5 font-body text-[0.78rem] text-muted" data-testid="saved-job-salary">
+                      {j.company_name} · {formatSalary(j.salary_min, j.salary_max)}
                     </p>
                   </div>
                   <Link
                     href={`/jobs/${j.id}`}
                     className="rounded-md bg-primary px-4 py-2 font-heading text-[0.78rem] font-bold text-white transition hover:bg-primary-deep"
+                    data-testid="saved-job-apply-cta"
                   >
-                    View &amp; apply
+                    Apply
                   </Link>
                 </li>
               ))}

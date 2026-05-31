@@ -13,8 +13,9 @@ import {
   type EmployerJob,
 } from "./EmployerDashboard";
 
+// story-jobs-16 D8: created_at added to EmployerJob type.
 const jobs: EmployerJob[] = [
-  { id: "j1", title: "QA Manager", status: "active", applicant_count: 2 },
+  { id: "j1", title: "QA Manager", status: "active", applicant_count: 2, created_at: "2020-01-01T09:00:00Z" },
 ];
 const stats: EmployerStats = { activeListings: 1, totalApplicants: 2, pendingReview: 1 };
 const applicants: ApplicantRow[] = [
@@ -40,7 +41,6 @@ function renderDash(opts: { applicants?: ApplicantRow[] } = {}) {
 }
 
 describe("EmployerDashboard stats grid (story-auth-10)", () => {
-  // story-auth-10 AC#2: only Active listings + Total applicants + Pending review shown
   it("renders the 3 modeled stat tiles: Active listings, Total applicants, Pending review (AC#2)", () => {
     renderDash();
     const grid = screen.getByTestId("employer-stats");
@@ -49,18 +49,16 @@ describe("EmployerDashboard stats grid (story-auth-10)", () => {
     expect(within(grid).getByText("Pending review")).toBeInTheDocument();
   });
 
-  // story-auth-10 AC#2: Avg. time to hire tile removed entirely — no placeholder
   it("does NOT render an 'Avg. time to hire' tile (AC#2)", () => {
     renderDash();
     const grid = screen.getByTestId("employer-stats");
     expect(within(grid).queryByText("Avg. time to hire")).toBeNull();
   });
 
-  // story-auth-10 AC#5: no stray em-dash placeholder in stats grid
   it("stats grid has no em-dash placeholder cell (AC#5)", () => {
     renderDash();
     const grid = screen.getByTestId("employer-stats");
-    expect(within(grid).queryByText("\u2014")).toBeNull();
+    expect(within(grid).queryByText("—")).toBeNull();
   });
 });
 
@@ -78,7 +76,6 @@ describe("EmployerDashboard applicants list — no match-score column (story-aut
     );
   });
 
-  // story-auth-10 AC#3: applicant row has no match-score column
   it("applicant row does NOT display a match score percentage (AC#3)", () => {
     renderDash();
     fireEvent.click(screen.getByRole("button", { name: "Applicants" }));
@@ -92,5 +89,29 @@ describe("EmployerDashboard applicants list — no match-score column (story-aut
     fireEvent.click(screen.getByRole("button", { name: "Applicants" }));
     expect(screen.getByText("No applicants yet")).toBeInTheDocument();
     expect(screen.queryByTestId("applicant-row")).toBeNull();
+  });
+});
+
+describe("EmployerDashboard posted jobs row (story-jobs-16 D8)", () => {
+  it("shows the posted date on the job row (AC D8)", () => {
+    renderDash();
+    const row = screen.getByTestId("posted-job-row");
+    expect(within(row).getByText(/Posted/)).toBeInTheDocument();
+    expect(within(row).getByText(/Posted.*Jan 1/)).toBeInTheDocument();
+  });
+
+  it("renders a View link (eye icon) on the job row (AC D8)", () => {
+    renderDash();
+    const row = screen.getByTestId("posted-job-row");
+    expect(within(row).getByRole("link", { name: "View job listing" })).toHaveAttribute(
+      "href",
+      "/jobs/j1",
+    );
+  });
+
+  it("renders a Close button for active jobs (AC D8)", () => {
+    renderDash();
+    const row = screen.getByTestId("posted-job-row");
+    expect(within(row).getByRole("button", { name: "Close job listing" })).toBeInTheDocument();
   });
 });

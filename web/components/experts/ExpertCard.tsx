@@ -62,7 +62,7 @@ export function ExpertCard({ expert }: { expert: ExpertCardData }) {
 
       <div className="flex flex-wrap gap-1.5">
         {expert.specializations.slice(0, 3).map((s) => (
-          <Tag key={s} variant="outline-green">
+          <Tag key={s} variant="neutral">
             {s}
           </Tag>
         ))}
@@ -80,7 +80,7 @@ export function ExpertCard({ expert }: { expert: ExpertCardData }) {
               expert.is_available ? "bg-secondary" : "bg-muted-2",
             )}
           />
-          {expert.is_available ? "Available" : "Unavailable"}
+          {expert.is_available ? "Available" : "Busy"}
         </span>
         <span className="font-heading text-[0.92rem] font-bold text-text">
           {formatHourlyRate(expert.hourly_rate)}

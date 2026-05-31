@@ -12,6 +12,9 @@ type Role = "seeker" | "employer" | "expert" | null;
  *   not signed in → link to /login?redirect=/jobs/[id]
  *   seeker        → opens the apply modal (resume + cover note; story-jobs-05/06)
  *   employer/expert → inline "switch to a seeker account" note
+ *
+ * story-jobs-16 D10: CTA copy aligned to "Apply for this job"
+ * (DEVIATIONS D10; prototype screens-jobs.jsx:195).
  */
 export function ApplyButton({
   jobId,
@@ -55,12 +58,14 @@ export function ApplyButton({
 
   return (
     <>
+      {/* story-jobs-16 D10: CTA copy aligned to prototype "Apply for this job" */}
       <button
         type="button"
         onClick={() => setOpen(true)}
         className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 font-heading text-[0.88rem] font-bold text-white transition hover:bg-primary-deep"
+        data-testid="apply-cta"
       >
-        <Icon name="briefcase" size={15} stroke={2} /> Apply now
+        <Icon name="briefcase" size={15} stroke={2} /> Apply for this job
       </button>
       {open ? <ApplyModal jobId={jobId} jobTitle={jobTitle} onClose={() => setOpen(false)} /> : null}
     </>

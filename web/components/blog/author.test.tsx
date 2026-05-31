@@ -26,13 +26,13 @@ const bareAuthor: AuthorExpert = {
   twitter_url: null,
 };
 
-describe("AuthorChip (story-blog-07 — header chip)", () => {
+describe("AuthorChip (story-blog-07 + story-blog-12)", () => {
   it("renders name, role, date, and both social links (AC#1)", () => {
     render(<AuthorChip author={fullAuthor} publishedAt="2026-05-12T09:00:00Z" />);
     expect(screen.getByText("Dr. Aarti Menon")).toBeInTheDocument();
     expect(screen.getByText(/FSSAI Lead Auditor/)).toBeInTheDocument();
     expect(screen.getByText(/May 12, 2026/)).toBeInTheDocument();
-    // initials when no avatar (honorific stripped → "AM").
+    // initials when no avatar (honorific stripped -> "AM").
     expect(screen.getByText("AM")).toBeInTheDocument();
 
     const li = screen.getByRole("link", { name: /Aarti Menon on LinkedIn/ });
@@ -48,9 +48,18 @@ describe("AuthorChip (story-blog-07 — header chip)", () => {
     expect(screen.queryByRole("link", { name: /LinkedIn/ })).toBeNull();
     expect(screen.queryByRole("link", { name: /Twitter/ })).toBeNull();
   });
+
+  it("wraps content in a bordered pill surface (blog-12 AC#2 / DEVIATIONS D4)", () => {
+    const { container } = render(<AuthorChip author={fullAuthor} publishedAt="2026-05-12T09:00:00Z" />);
+    const pill = container.firstChild as HTMLElement;
+    // Must be a rounded-full, bordered, card-bg pill surface.
+    expect(pill.className).toContain("rounded-full");
+    expect(pill.className).toContain("border");
+    expect(pill.className).toContain("inline-flex");
+  });
 });
 
-describe("AuthorBioCard (story-blog-07 — bio card)", () => {
+describe("AuthorBioCard (story-blog-07 -- bio card)", () => {
   it("renders name, role, bio, socials, article count, and a site contact (AC#2, #5)", () => {
     render(<AuthorBioCard author={fullAuthor} articleCount={4} />);
     expect(screen.getByText("About the author")).toBeInTheDocument();
@@ -63,7 +72,7 @@ describe("AuthorBioCard (story-blog-07 — bio card)", () => {
     expect(linkedin).toHaveAttribute("rel", "noopener noreferrer");
     expect(linkedin).toHaveAttribute("target", "_blank");
 
-    // site contact is a generic mailto — never the expert's server-only contact_email.
+    // site contact is a generic mailto -- never the expert's server-only contact_email.
     const mail = screen.getByRole("link", { name: /hello@foodnme\.in/ });
     expect(mail).toHaveAttribute("href", "mailto:hello@foodnme.in");
   });
@@ -76,7 +85,7 @@ describe("AuthorBioCard (story-blog-07 — bio card)", () => {
   it("degrades cleanly when bio / socials / avatar are missing (AC#7)", () => {
     const { container } = render(<AuthorBioCard author={bareAuthor} articleCount={0} />);
     expect(screen.getByRole("heading", { name: "Jane Doe" })).toBeInTheDocument();
-    // no role line, no bio, no social links — but the card and count still render.
+    // no role line, no bio, no social links -- but the card and count still render.
     expect(within(container).queryByRole("link", { name: /LinkedIn|Twitter/ })).toBeNull();
     expect(screen.getByText("0 articles")).toBeInTheDocument();
     expect(screen.getByText("JD")).toBeInTheDocument(); // initials fallback, no avatar

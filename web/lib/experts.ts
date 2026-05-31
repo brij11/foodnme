@@ -55,22 +55,40 @@ export type ExpertFilters = {
   specializations?: string[];
   location?: string;
   available?: boolean;
+  /** Filter to verified experts only (`is_featured = true`). story-experts-12 / DEVIATIONS A1. */
+  verified?: boolean;
+  /** Column to sort by: "rating" (default) or "experience" (`experience_years`). DEVIATIONS A2. */
+  sortBy?: "rating" | "experience";
 };
 
 /**
- * Active experts for `/experts` (story-experts-01). Featured first, then newest. Free-text `q`
- * runs against the FTS `search_vector` (full_name + title + specializations); specializations
- * filter by array overlap; location by ILIKE; `available` narrows to `is_available=true`.
+ * Active experts for `/experts` (story-experts-01, story-experts-12). sortBy "rating" orders by
+ * rating desc then is_featured desc; sortBy "experience" orders by experience_years desc then
+ * is_featured desc. Free-text `q` runs against the FTS `search_vector`; specializations by array
+ * overlap; location by ILIKE; `available` narrows to `is_available=true`; `verified` narrows to
+ * `is_featured=true` (DEVIATIONS A1 — is_featured is the "Verified expert" flag, §4.2 line 144).
  * RLS already restricts the anon client to `status='active'`; we also assert it explicitly.
  */
 export async function listExperts(filters: ExpertFilters = {}): Promise<ExpertCardData[]> {
   const supabase = createPublicClient();
+  const sortBy = filters.sortBy ?? "rating";
+
   let query = supabase
     .from("experts")
     .select(CARD_COLUMNS)
-    .eq("status", "active")
-    .order("is_featured", { ascending: false })
-    .order("created_at", { ascending: false });
+    .eq("status", "active");
+
+  if (sortBy === "experience") {
+    query = query
+      .order("experience_years", { ascending: false })
+      .order("is_featured", { ascending: false })
+      .order("created_at", { ascending: false });
+  } else {
+    query = query
+      .order("rating", { ascending: false, nullsFirst: false })
+      .order("is_featured", { ascending: false })
+      .order("created_at", { ascending: false });
+  }
 
   if (filters.q && filters.q.trim()) {
     query = query.textSearch("search_vector", filters.q.trim(), { type: "websearch" });
@@ -83,6 +101,9 @@ export async function listExperts(filters: ExpertFilters = {}): Promise<ExpertCa
   }
   if (filters.available) {
     query = query.eq("is_available", true);
+  }
+  if (filters.verified) {
+    query = query.eq("is_featured", true);
   }
 
   const { data, error } = await query;
