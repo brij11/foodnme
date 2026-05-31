@@ -1,22 +1,38 @@
 import type { Metadata } from "next";
-import { listResources, getTemplateCategoryCounts } from "@/lib/resources";
+import { listResources, getTemplateCategoryCounts, type TemplateSort } from "@/lib/resources";
 import { TEMPLATE_CATEGORIES, templateCategoryLabel } from "@/lib/categories";
 import { PageHeader } from "@/components/listing/PageHeader";
 import { ListingShell } from "@/components/listing/ListingShell";
 import { ListingSidebar, type SidebarCategory, type SidebarFacet } from "@/components/listing/ListingSidebar";
 import { TemplateGrid } from "@/components/templates/TemplateGrid";
 import { EmptyState } from "@/components/listing/EmptyState";
+import { SortSelect } from "@/components/listing/SortSelect";
+import { NewsletterBanner } from "@/components/newsletter/NewsletterBanner";
 
 const FILE_FORMATS = [
   { value: "pdf", label: "PDF" },
   { value: "docx", label: "DOCX" },
 ];
 
-/** Build a /templates URL preserving the active category + the given format set. */
-function templatesHref(category: string | undefined, formats: string[]): string {
+/**
+ * Valid sort values for the templates listing (story-templates-05 AC#1/2).
+ * "shortest" is intentionally absent — no page-count column (DEVIATIONS C7).
+ */
+const TEMPLATE_SORT_OPTIONS = [
+  { value: "popular", label: "Most downloaded" },
+  { value: "recent", label: "Most recent" },
+] as const satisfies { value: TemplateSort; label: string }[];
+
+/** Build a /templates URL preserving the active category + format set + sort order. */
+function templatesHref(
+  category: string | undefined,
+  formats: string[],
+  sort?: string,
+): string {
   const p = new URLSearchParams();
   if (category && category !== "all") p.set("category", category);
   for (const f of [...formats].sort()) p.append("format", f);
+  if (sort && sort !== "popular") p.set("sort", sort);
   const qs = p.toString();
   return qs ? `/templates?${qs}` : "/templates";
 }
@@ -32,7 +48,12 @@ export const metadata: Metadata = {
   },
 };
 
-type SearchParams = { category?: string | string[]; format?: string | string[] };
+type SearchParams = {
+  category?: string | string[];
+  format?: string | string[];
+  /** story-templates-05: "popular" (default) | "recent" */
+  sort?: string | string[];
+};
 
 export default async function TemplatesPage({ searchParams }: { searchParams: SearchParams }) {
   const category = typeof searchParams.category === "string" ? searchParams.category : undefined;
@@ -46,8 +67,15 @@ export default async function TemplatesPage({ searchParams }: { searchParams: Se
       : [];
   const formats = FILE_FORMATS.map((f) => f.value).filter((v) => rawFormats.includes(v));
 
+  // Sort param (story-templates-05 AC#1/4): default "popular"; validate against the allowed set.
+  const rawSort = typeof searchParams.sort === "string" ? searchParams.sort : "popular";
+  const sort: TemplateSort =
+    TEMPLATE_SORT_OPTIONS.some((o) => o.value === rawSort)
+      ? (rawSort as TemplateSort)
+      : "popular";
+
   const [templates, counts] = await Promise.all([
-    listResources({ category, formats }),
+    listResources({ category, formats, sort }),
     getTemplateCategoryCounts(),
   ]);
 
@@ -58,18 +86,18 @@ export default async function TemplatesPage({ searchParams }: { searchParams: Se
     slug: c.slug,
     label: c.label,
     count: counts[c.slug] ?? 0,
-    // Category links preserve the active format filter.
-    href: templatesHref(c.slug, formats),
+    // Category links preserve the active format filter + sort order (story-templates-05 AC#4).
+    href: templatesHref(c.slug, formats, sort),
     active: activeSlug === c.slug,
   }));
 
-  // File-format facet — each option toggles itself in/out of the URL, preserving category.
+  // File-format facet — each option toggles itself in/out of the URL, preserving category + sort.
   const formatFacet: SidebarFacet = {
     title: "File format",
     options: FILE_FORMATS.map((f) => {
       const active = formats.includes(f.value);
       const next = active ? formats.filter((v) => v !== f.value) : [...formats, f.value];
-      return { value: f.value, label: f.label, href: templatesHref(category, next), active };
+      return { value: f.value, label: f.label, href: templatesHref(category, next, sort), active };
     }),
   };
 
@@ -96,17 +124,24 @@ export default async function TemplatesPage({ searchParams }: { searchParams: Se
       />
 
       <ListingShell sidebar={sidebar}>
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        {/* Results header: count + sort dropdown (story-templates-05 AC#1/4 — DEVIATIONS A3) */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <p data-testid="result-count" className="font-body text-[0.85rem] text-muted">
             <strong className="font-semibold text-text">{templates.length}</strong>{" "}
             {templates.length === 1 ? "template" : "templates"}
             {activeSlug !== "all" ? ` in ${templateCategoryLabel(activeSlug)}` : ""}
             {formatLabel}
           </p>
+          {/* SortSelect is a client component; it reads/writes the `sort` searchParam. */}
+          <SortSelect
+            options={TEMPLATE_SORT_OPTIONS as unknown as { value: string; label: string }[]}
+            defaultValue="popular"
+            srLabel="Sort templates"
+          />
         </div>
 
         {templates.length > 0 ? (
-          <TemplateGrid key={`${activeSlug}-${formats.join(",")}`} templates={templates} />
+          <TemplateGrid key={`${activeSlug}-${formats.join(",")}-${sort}`} templates={templates} />
         ) : (
           <EmptyState
             variant="filter"
@@ -116,6 +151,17 @@ export default async function TemplatesPage({ searchParams }: { searchParams: Se
           />
         )}
       </ListingShell>
+
+      {/* Full-width newsletter banner (story-templates-05 AC#3 — DEVIATIONS A4).
+          Distinct from the sidebar mini-newsletter (§3.5 correctly excludes that for templates). */}
+      <div className="mt-16">
+        <NewsletterBanner
+          source="templates"
+          headline="Get notified when new templates are added."
+          subtext="One short email a month with new and updated templates. No spam."
+          suppressesFooterNewsletter={true}
+        />
+      </div>
     </div>
   );
 }

@@ -33,18 +33,33 @@ export async function getResourceBySlug(slug: string): Promise<Resource | null> 
 }
 
 /**
+ * Sort options for the templates listing (story-templates-05 AC#1).
+ * "shortest" (by pages) is intentionally excluded — the `resources` table has no page-count
+ * column (TECHNICAL-REQUIREMENTS.md §3.5 / DEVIATIONS C7).
+ */
+export type TemplateSort = "popular" | "recent";
+
+/**
  * Templates for the `/templates` listing, most-downloaded first, optionally filtered by
  * category (templates-01). `resources` is fully public (RLS allows anon read of every row),
  * so there is no `is_published` gate as the blog has.
+ *
+ * `sort` defaults to `"popular"` (download_count DESC). Use `"recent"` for created_at DESC
+ * (story-templates-05 AC#1, AC#4). "shortest" is excluded — no pages column (DEVIATIONS C7).
  */
 export async function listResources(
-  opts: { category?: string; formats?: string[] } = {},
+  opts: { category?: string; formats?: string[]; sort?: TemplateSort } = {},
 ): Promise<Resource[]> {
   const supabase = createPublicClient();
+
+  // Sort column/direction: popular → download_count DESC; recent → created_at DESC.
+  const ascending = false;
+  const orderColumn: string = opts.sort === "recent" ? "created_at" : "download_count";
+
   let query = supabase
     .from("resources")
     .select(RESOURCE_COLUMNS)
-    .order("download_count", { ascending: false });
+    .order(orderColumn, { ascending });
 
   if (opts.category && opts.category !== "all") {
     query = query.eq("category", opts.category);

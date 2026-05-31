@@ -70,4 +70,33 @@ describe("NewsletterBanner", () => {
     expect(screen.getByLabelText("Newsletter")).toHaveAttribute("type", "email");
     expect(screen.getByRole("button", { name: /subscribe/i })).toBeInTheDocument();
   });
+
+  // story-templates-05 AC#3 / DEVIATIONS A4: full-width banner for templates listing
+  it("renders for source='templates' with the custom headline and subtext (templates-05 AC#3)", () => {
+    render(
+      <NewsletterBanner
+        source="templates"
+        headline="Get notified when new templates are added."
+        subtext="One short email a month with new and updated templates. No spam."
+      />,
+    );
+    expect(
+      screen.getByRole("heading", { name: "Get notified when new templates are added." }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("One short email a month with new and updated templates. No spam."),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /subscribe/i })).toBeInTheDocument();
+  });
+
+  it("POSTs source='templates' to /api/newsletter (templates-05 AC#3)", async () => {
+    const fetchFn = mockFetch(true, { ok: true });
+    render(<NewsletterBanner source="templates" />);
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "qa@ftech.in" } });
+    fireEvent.click(screen.getByRole("button", { name: /subscribe/i }));
+    await waitFor(() => expect(screen.getByText("Subscribed — check your inbox.")).toBeInTheDocument());
+    const sentBody = JSON.parse((fetchFn.mock.calls[0]![1] as RequestInit).body as string);
+    expect(sentBody.source).toBe("templates");
+  });
 });

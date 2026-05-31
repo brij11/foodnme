@@ -16,7 +16,7 @@ type ChainResult = { data: unknown; error: null };
 
 function chain(result: ChainResult) {
   const obj: Record<string, unknown> = {};
-  for (const m of ["select", "eq", "neq", "order", "limit", "maybeSingle"]) {
+  for (const m of ["select", "eq", "neq", "order", "limit", "maybeSingle", "in"]) {
     obj[m] = vi.fn(() => obj);
   }
   (obj as { then: unknown }).then = (resolve: (r: ChainResult) => unknown) => resolve(result);
@@ -30,7 +30,7 @@ function clientWithQueue(results: ChainResult[]) {
   return { from: vi.fn(() => chains[i++]) } as never;
 }
 
-describe("listResources (templates-01)", () => {
+describe("listResources (templates-01 / story-templates-05)", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("orders by download_count desc and applies the category filter (not for 'all')", async () => {
@@ -53,6 +53,41 @@ describe("listResources (templates-01)", () => {
     const c = chain({ data: null, error: null });
     vi.mocked(createClient).mockReturnValue({ from: () => c } as never);
     expect(await listResources()).toEqual([]);
+  });
+
+  // story-templates-05 AC#1: sort dropdown re-orders the grid
+  it("sorts by download_count DESC when sort='popular' or omitted (AC#1 — default)", async () => {
+    const c = chain({ data: [{ slug: "a" }], error: null });
+    vi.mocked(createClient).mockReturnValue({ from: () => c } as never);
+    await listResources({ sort: "popular" });
+    expect(c.order).toHaveBeenCalledWith("download_count", { ascending: false });
+  });
+
+  it("sorts by created_at DESC when sort='recent' (AC#1 — Most recent)", async () => {
+    const c = chain({ data: [{ slug: "b" }], error: null });
+    vi.mocked(createClient).mockReturnValue({ from: () => c } as never);
+    await listResources({ sort: "recent" });
+    expect(c.order).toHaveBeenCalledWith("created_at", { ascending: false });
+  });
+
+  // story-templates-05 AC#2: excludes page-count ordering (DEVIATIONS C7 — no pages column)
+  it("never calls order with a 'pages' column — no such schema column (AC#2)", async () => {
+    const c = chain({ data: [], error: null });
+    vi.mocked(createClient).mockReturnValue({ from: () => c } as never);
+    await listResources({ sort: "popular" });
+    const orderSpy = c.order as ReturnType<typeof vi.fn>;
+    const cols = orderSpy.mock.calls.map((args: unknown[]) => args[0] as string);
+    expect(cols.includes("pages")).toBe(false);
+  });
+
+  // story-templates-05 AC#4: sort composes with category and format filters
+  it("applies category + format filters together with sort (AC#4 — composes with existing filters)", async () => {
+    const c = chain({ data: [{ slug: "x" }], error: null });
+    vi.mocked(createClient).mockReturnValue({ from: () => c } as never);
+    await listResources({ category: "sop-templates", formats: ["pdf"], sort: "recent" });
+    expect(c.order).toHaveBeenCalledWith("created_at", { ascending: false });
+    expect(c.eq).toHaveBeenCalledWith("category", "sop-templates");
+    expect(c.in).toHaveBeenCalledWith("file_type", ["pdf"]);
   });
 
   describe("getFeaturedTemplate (story-homepage-07)", () => {
