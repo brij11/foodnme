@@ -14,7 +14,7 @@ type StatProps = { value: number; label: string; suffix?: string; thousands?: bo
 function Stat({ value, label, suffix, thousands }: StatProps) {
   return (
     <div>
-      <div className="font-display text-2xl font-bold leading-none tracking-tight text-text">
+      <div className="font-heading text-2xl font-bold leading-none tracking-tight text-text">
         <CountUp value={value} suffix={suffix} thousands={thousands} />
       </div>
       <div className="mt-1.5 font-heading text-[0.62rem] font-bold uppercase tracking-[0.1em] text-muted">

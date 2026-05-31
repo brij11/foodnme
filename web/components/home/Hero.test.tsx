@@ -41,7 +41,7 @@ beforeEach(() => {
   });
 });
 
-describe("Hero (story-homepage-05)", () => {
+describe("Hero (story-homepage-05 + story-homepage-12)", () => {
   it("renders exactly one H1 with the hero headline (AC#4)", () => {
     renderHero();
     const h1s = screen.getAllByRole("heading", { level: 1 });
@@ -83,5 +83,16 @@ describe("Hero (story-homepage-05)", () => {
   it("hardcodes no external image URLs — collage covers are data-driven (AC#9)", () => {
     const { container } = renderHero([]);
     expect(container.querySelectorAll("img")).toHaveLength(0);
+  });
+
+  it("stat-strip numbers use font-heading (Inter), not font-display (Fraunces) (story-homepage-12 AC1)", () => {
+    const { container } = renderHero();
+    const strip = container.querySelector("[data-testid='hero-stats']");
+    // The number <div> is the first child of each stat cell
+    const numDivs = strip?.querySelectorAll("div > div:first-child");
+    numDivs?.forEach((el) => {
+      expect(el.className).toContain("font-heading");
+      expect(el.className).not.toContain("font-display");
+    });
   });
 });
