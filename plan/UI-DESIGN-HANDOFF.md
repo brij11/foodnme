@@ -176,6 +176,8 @@ Shared by Blog, Category, Templates, Jobs, Experts. Originally built as horizont
 
 Sidebar contains: search input → category list with counts → secondary filters (checkboxes / slider / toggles) → "Clear all filters" button → mini newsletter (on Blog/Category only).
 
+**Search input routing (decision, 2026-05-31 — story-blog-11, DEVIATIONS A8):** The sidebar search input on `/blog` and `/blog/category/*` routes to the global `/search` page (a cross-entity full-text search added after the prototype). It does **not** filter articles in place. The placeholder copy must make this clear (e.g. "Search all of foodnme…"). No `?q=` in-page filtering is claimed on listing pages.
+
 Main column: result count + sort dropdown → card grid (2-col on desktop) → load-more button.
 
 The legacy `<PillRow>` component is kept for future use (e.g. featured-categories row on homepage) but not currently rendered anywhere.
