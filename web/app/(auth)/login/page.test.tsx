@@ -17,7 +17,7 @@ const createClient = vi.fn(() => ({
   auth: { signInWithPassword, resend: vi.fn() },
 }));
 vi.mock("@/lib/supabase/client", () => ({
-  createClient: (arg?: unknown) => createClient(arg),
+  createClient: (arg?: unknown) => (createClient as (a?: unknown) => ReturnType<typeof createClient>)(arg),
 }));
 
 import LoginPage from "./page";

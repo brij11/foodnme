@@ -2,7 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Capture the options passed through to @supabase/ssr so we can assert the cookie
 // lifetime the "Keep me signed in" control drives (story-auth-09 AC#2, #3).
-const createBrowserClient = vi.fn(() => ({ tag: "supabase-client" }));
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const createBrowserClient = vi.fn((_url?: unknown, _key?: unknown, _options?: unknown) => ({
+  tag: "supabase-client",
+}));
 vi.mock("@supabase/ssr", () => ({
   createBrowserClient: (url: unknown, key: unknown, options?: unknown) =>
     createBrowserClient(url, key, options),
