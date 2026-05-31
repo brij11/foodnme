@@ -5,7 +5,7 @@
 export function ValueStrip() {
   return (
     <section className="mx-auto max-w-content px-6 py-12 lg:px-12">
-      <div className="border-l-[3px] border-accent pl-6">
+      <div className="border-l-[3px] border-primary pl-6">
         <p className="font-heading text-[0.7rem] font-bold uppercase tracking-[0.14em] text-text">
           For QA · QC · Regulatory · R&amp;D teams
         </p>
