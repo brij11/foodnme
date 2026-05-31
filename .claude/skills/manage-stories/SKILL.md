@@ -70,6 +70,17 @@ design:                           # see "Design linkage" below
 ---
 ```
 
+**Downstream-managed fields** (added by `analyze-sprint` / `execute-sprint`, not by this skill — preserve them, never strip them):
+
+| Field | Written by | Meaning |
+|---|---|---|
+| `analyzed` / `analyzed_date` | analyze-sprint | story has passed the analysis gate |
+| `exec_model: sonnet \| opus` | analyze-sprint | which model execute-sprint should build it on (default `sonnet`) |
+| `escalated: true` | execute-sprint | a Sonnet build failed the gate and was retried on Opus |
+| `executed_date` | execute-sprint | story reached `done` |
+
+These are valid frontmatter; `lint` and `index` must tolerate (and `index` may surface) them, never flag them as unknown.
+
 ### Body sections, in this order
 
 1. **User story** — `As a <role>, I want <capability>, so that <outcome>.`

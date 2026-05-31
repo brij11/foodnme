@@ -5,11 +5,20 @@ description: Builds a sprint's analyzed stories one at a time in dependency orde
 
 # execute-sprint
 
-This skill runs the **build pass** that sits downstream of `/analyze-sprint`. It takes a single sprint, lines up its analyzed stories, and executes them one at a time in dependency order. For each story it implements the production code, writes the tests the story's acceptance criteria demand, runs them, checks off every acceptance criterion, and stamps the story **done**.
+This skill runs the **build pass** that sits downstream of `/analyze-sprint`. It takes a single sprint, lines up its analyzed stories, and builds them **one at a time in dependency order**. It does **not** build them inline; it acts as a **thin orchestrator** that dispatches one `sprint-story-builder` subagent per story — on a per-story model — and that subagent implements the code + tests, runs the gate, verifies every acceptance criterion, and stamps the story **done** in its own isolated context. The orchestrator only resolves the sprint, orders the work, dispatches, reads each subagent's result, handles escalation, and regenerates the index.
 
-It is the gate that turns a `ready` (analyzed) story into a `done` one. It reuses `analyze-sprint`'s sprint-resolution and dependency-ordering, and `manage-stories`' vocabulary, frontmatter schema, five-state task set, the `done`-gate, and idempotent `INDEX.md` generation — read `.claude/skills/analyze-sprint/SKILL.md` and `.claude/skills/manage-stories/SKILL.md` first if anything here is ambiguous. Where those skills own *format* and *analysis workflow*, this skill owns the *build workflow*.
+It is the gate that turns a `ready` (analyzed) story into a `done` one. It reuses `analyze-sprint`'s sprint-resolution and dependency-ordering, and `manage-stories`' vocabulary, frontmatter schema, five-state task set, the `done`-gate, and idempotent `INDEX.md` generation — read `.claude/skills/analyze-sprint/SKILL.md` and `.claude/skills/manage-stories/SKILL.md` first if anything here is ambiguous. The per-story **build protocol** (Steps 0–5) lives in `.claude/agents/sprint-story-builder.md`; this skill owns the *orchestration* around it.
 
 **This skill only executes `analyzed: true` stories.** It never analyzes, never breaks down tasks, and never reconciles the docs — if a story isn't ready or a doc gap surfaces, it stops and routes back to `/analyze-sprint`.
+
+## Model & orchestration
+
+Per-story work runs in subagents so the orchestrator's context stays tiny (it holds only story ids, pass/fail, and commit SHAs — never the file dumps, generated code, or test output). This both isolates context and lets each story run on the right-sized model.
+
+- **Run the orchestrator itself on a cheap model** (Haiku or Sonnet). It only dispatches, parses each subagent's `RESULT` block, and regenerates `INDEX.md` — no heavy reasoning.
+- **Each story's model is chosen by `analyze-sprint`** and recorded in the story's `exec_model` frontmatter field: `sonnet` (default) or `opus` (set when the story is complex — schema/migration, cross-story data coordination, algorithmic/stateful logic, spec reconciliation, security surface, or a net-new pattern). A story with no `exec_model` field defaults to **`sonnet`**.
+- **Auto-escalation:** if a Sonnet subagent returns `status: failed` (couldn't green the gate within its 3 fix attempts), the orchestrator escalates that one story to **Opus** (see *Escalation* below). Opus failing too → the story is `blocked`.
+- The subagent's `model` is set via the Agent tool's `model` parameter per spawn; it overrides the `sonnet` default in the agent definition.
 
 ## What it builds
 
@@ -47,7 +56,7 @@ Before building anything, line the sprint up and confirm it's executable:
 4. **Toolchain pre-flight:** confirm Node 20 + `pnpm` are available. Check whether `web/` exists:
    - **Absent** → run the **Scaffold** step below, then commit it as the bootstrap.
    - **Present** → reuse it.
-5. **Print the execution plan** — the ordered story list with SP, deps, and design linkage, e.g. `Sprint 1 (16 stories): homepage-01 → homepage-02 → blog-01 → templates-01 → … `. This is the alignment output; building starts after it.
+5. **Print the execution plan** — the ordered story list with SP, deps, and the **per-story `exec_model`** (default `sonnet`; `opus` where analysis flagged it), e.g. `Sprint 1 (16 stories): homepage-01 [opus] → homepage-02 [sonnet] → blog-01 [sonnet] → … `. This is the alignment output; building starts after it.
 
 ## Scaffold (first run only — when `web/` is absent)
 
@@ -63,95 +72,55 @@ Create the production project per `TECHNICAL-REQUIREMENTS.md` §2–§3, then co
 
 The scaffold is **not** a story — it's the substrate Sprint-1 stories build on (`homepage-01` "design tokens + UI primitives" assumes a configured Tailwind/Next project exists).
 
-## Per-story loop
+## Dispatch loop — one subagent per story
 
-Process **one story at a time**, in the dependency order from pre-flight. Never batch. For each story run steps 0–5, then checkpoint.
+Process **one story at a time**, in the dependency order from pre-flight. **Never batch and never run two builders in parallel** — await each story's subagent fully before dispatching the next (sequential execution is required; it also means no git contention, so no worktrees are needed). The orchestrator does **not** read the story's design/docs or write any `web/` code itself — that all happens inside the subagent.
 
-### Step 0 — Read & ground
+For each story:
 
-Read the story file in full. Read its linked `design/*.jsx` prototype screens (the visual source to port) and the relevant sections of `TECHNICAL-REQUIREMENTS.md` / `UI-DESIGN-HANDOFF.md` the story touches. Confirm every `dependencies:` story is already `done`. Print a 3–4 line orientation: title, the User-story line, acceptance-criteria count, task count, and `design:` value.
+1. **Read just the routing facts from the story file** — its `exec_model` (default `sonnet` if absent) and confirm its `dependencies:` are all `done` (a not-`done` dependency is a hard blocker — halt). Do **not** read the design or docs here; the subagent does.
+2. **Spawn a `sprint-story-builder` subagent** via the Agent tool, with `model` set to the story's `exec_model`, passing a prompt that contains: the `story_id`, the story file path, `exec_model`, and `escalation: false`. The subagent runs the Steps 0–5 build protocol in its own context and returns a `RESULT` block.
+3. **Parse the `RESULT` block** and act on `status`:
+   - **`green`** → confirm the evidence cheaply (`git log -1` shows the story's final commit; the `tests:` line is a pass summary). Print the checkpoint line and continue to the next story. Do **not** re-run the suite in the orchestrator — that would re-import the cost the subagent just isolated.
+   - **`failed`** → the gate couldn't be greened within the subagent's 3 attempts. If the model was `sonnet`, **escalate** (below). If it was already `opus`, treat as a hard blocker: the story is `blocked` — halt.
+   - **`blocked`** → a hard blocker the subagent already recorded in the story's `## Notes` (with `status: blocked`). Halt and report.
 
-### Step 1 — Mark in-progress
+### Escalation — Sonnet failed → retry on Opus
 
-Set `status: ready → in-progress` and flip the first `## Tasks` entry `[new] → [started]`, then write the story file. (Never downgrade a story that's already further along.)
+When a `sonnet` subagent returns `failed`:
 
-### Step 2 — Implement the tasks
-
-Walk `## Tasks` in order. For each task:
-
-- Write the production code it calls for, following `TECHNICAL-REQUIREMENTS.md` for stack/structure/schema/auth/API/routing/security, and porting the visual design from the linked prototype screen + the `UI-DESIGN-HANDOFF.md` tokens/components.
-- **Reuse, don't duplicate** — compose from the design system and primitives earlier stories built (e.g. `homepage-01`'s UI primitives, `blog-01`'s shared sidebar) rather than re-implementing.
-- Flip the task `[started] → [completed]` when its code (and its tests, Step 3) land.
-- Make an **atomic commit** per task or coherent unit, referencing the story id and the AC(s) it satisfies.
-
-Never invent behaviour the story's Description / Acceptance criteria don't specify. If a task can't be built as written because the spec is silent or contradictory, that's a **hard blocker** — stop (do not guess).
-
-### Step 3 — Write the tests
-
-Per `TECHNICAL-REQUIREMENTS.md` §10:
-
-- **Every `/api/*` route → at least one Vitest unit test** (Supabase client mocked; external services — ZeptoMail, Turnstile, Upstash, Sentry — stubbed). Also unit-test Zod schemas and non-trivial utilities.
-- **Each page / user flow → a Playwright E2E**, plus an **axe-core** a11y check on each §10 key page (homepage, blog listing, article detail, template detail, services, login, dashboard) with zero critical/serious violations.
-- **Map each acceptance criterion to a concrete assertion.** Where an AC is purely visual and not automatable, record it as a documented manual check in `## Notes` rather than silently skipping it.
-
-### Step 4 — Run tests & verify every acceptance criterion
-
-- Run the suite: `pnpm typecheck`, `pnpm lint`, `pnpm test` (Vitest), `pnpm build`, and the relevant `pnpm e2e` (Playwright against the local Supabase stack + stubbed externals).
-- Walk the story's `## Acceptance criteria`. Flip each `- [ ] → - [x]` **only** when a passing test (or a recorded manual check) backs it, and note which test covers it.
-- A failing test → fix the code and re-run, up to a **bounded number of attempts** (≈3). If it still can't be made to pass, treat it as a **hard blocker**.
-
-### Step 5 — Mark done
-
-Only when **all** tasks are `[completed]`/`[cancelled]`, **all** acceptance criteria are `[x]`, and the full suite is green — update frontmatter and write the file:
-
-- `status: in-progress → done`
-- ensure `tasks_populated: true`
-- add `executed_date: <today's date, YYYY-MM-DD>`
-
-Then make the final atomic commit for the story.
-
-```yaml
----
-id: story-homepage-01
-topic: homepage
-sprint: 1
-story_points: 4
-status: done
-owner: brij
-tasks_populated: true
-analyzed: true
-analyzed_date: 2026-05-23
-executed_date: 2026-05-25
-dependencies: []
-design:
-  - design/screens-main.jsx
----
-```
+1. **Discard the failed attempt's uncommitted changes** so Opus starts from clean committed state: `git checkout -- .` (and `git clean -fd` for stray new files) in `web/`. Per-task commits the Sonnet attempt already landed are **kept** — they're green, tested work Opus will resume from.
+2. **Stamp the story frontmatter** `exec_model: opus` and `escalated: true`, then write the file.
+3. **Spawn a fresh `sprint-story-builder` subagent with `model: opus`**, passing `escalation: true` plus a **short prior-failure summary** (what Sonnet attempted and the failing test output from its `RESULT`) so Opus skips the dead-end and resumes from the committed task progress.
+4. Act on the Opus `RESULT` as above. Opus returning `failed` or `blocked` → the story is `blocked`; halt.
 
 ### Checkpoint
 
-After each story print one line — `✓ story-homepage-01 done (6 tasks · 7 ACs verified · 14 tests green)` or `⛔ story-services-03 blocked — ZeptoMail key absent, inquiry-send E2E can't pass`. In fully-autonomous mode, **continue automatically to the next story**; only a **hard blocker** halts the run. The user may still say "stop" at any checkpoint — already-`done` stories stay done.
+After each story print one line — `✓ story-homepage-01 done [sonnet] (6 tasks · 7 ACs · 14 tests green)`, `↑ story-homepage-06 done [opus, escalated] (…)`, or `⛔ story-services-03 blocked — ZeptoMail key absent, inquiry-send E2E can't pass`. In fully-autonomous mode, **continue automatically to the next story**; only a hard blocker (a `blocked` result, an Opus `failed`, or a not-`done` dependency) halts the run. The user may say "stop" at any checkpoint — already-`done` stories stay done.
 
 ## Hard blockers — halt even in autonomous mode
 
-Stop the run and surface the blocker when:
+A story is **blocked** (and the run halts) when:
 
-- A story's dependency isn't `done` (within-sprint not yet built, or a cross-sprint dependency that's incomplete).
-- Tests can't be made to pass after the bounded fix attempts.
+- A story's dependency isn't `done` (within-sprint not yet built, or a cross-sprint dependency that's incomplete) — the **orchestrator** catches this before dispatch.
+- The gate can't be greened after **both** the Sonnet attempt (3 fix tries) **and** the Opus escalation — i.e. an Opus subagent returns `failed`.
 - An acceptance criterion needs an **external secret/service** (ZeptoMail, Turnstile, Sentry, Upstash, a hosted Supabase) that isn't available and can't be stubbed without violating the AC's intent.
 - The **toolchain is unavailable** — no Node/`pnpm`, no Docker for the local Supabase stack, Playwright browsers won't install.
 - An acceptance criterion is ambiguous or contradicts the docs — analysis should have caught it; route back to `/analyze-sprint`.
 
-On a hard blocker: set the story `status: blocked`, record the reason **and the next step** in `## Notes`, leave already-finished tasks `[completed]` and the blocking task `[hold]`, regenerate `INDEX.md`, then halt and report. Never check off an AC that isn't actually satisfied, and never edit an AC to make a test pass.
+The **subagent** marks the in-place state for blockers it detects (`status: blocked`, reason + next step in `## Notes`, finished tasks `[completed]`, the blocking task `[hold]`) and returns `status: blocked`. The **orchestrator**, on a `blocked` result (or an Opus `failed`, or a not-`done` dependency it caught itself), **regenerates `INDEX.md`, then halts and reports**. Never check off an AC that isn't satisfied, and never edit an AC to make a test pass.
 
 ## After the sprint
 
 1. **Regenerate `plan/stories/INDEX.md`** via the `manage-stories` index flow (same template, idempotent) so the Status and Tasks columns reflect the run (`done` / `in-progress` / `blocked`, and `N/N` task counts).
-2. **Print a summary:** stories done vs. blocked, total tasks completed, tests written and passing, commits made, and files/directories created under `web/`. List every blocked story with its reason and suggested next step.
+2. **Print a summary** (from the subagents' `RESULT` blocks — the orchestrator never re-derives it): stories done vs. blocked, **which model each ran on and which escalated** (`sonnet` / `opus` / `opus (escalated)`), total tasks completed, tests passing, and commits made. List every blocked story with its reason and suggested next step.
+3. *(Optional)* a single end-of-sprint `pnpm test` from `web/` as a belt-and-suspenders check that the accumulated work is green — the only time the orchestrator runs the suite itself.
 
 ## Operating rules
 
-- **One story at a time, dependency-first.** Never build a story before the stories it depends on are `done`.
+- **One subagent at a time, dependency-first, never parallel.** Await each story's builder before dispatching the next. Never build a story before the stories it depends on are `done`.
+- **The orchestrator stays thin and cheap.** It dispatches, parses `RESULT` blocks, escalates, and regenerates `INDEX.md` — it never reads the design/docs or writes per-story `web/` code itself (that's the subagent's job, in isolated context). The **one exception is the first-run Scaffold bootstrap**, which the orchestrator performs before any story. Run it on Haiku/Sonnet (bump to a stronger model just for the Scaffold if needed).
+- **Per-story model = the story's `exec_model`** (default `sonnet`), escalated to `opus` on a Sonnet `failed`. The orchestrator records `escalated: true` when it escalates.
 - **Only `analyzed: true` stories execute.** A `draft`/un-analyzed story is never built — route it to `/analyze-sprint`.
 - **Code obeys `TECHNICAL-REQUIREMENTS.md`** (highest precedence: stack, structure, schema, auth, API, routing, security). Visuals follow `UI-DESIGN-HANDOFF.md` + the linked prototype screens. The prototype never overrides the tech spec.
 - **Tests are mandatory, per §10.** Every `/api` route ships ≥1 unit test; every user flow ships an E2E. A story is `done` **only** when its tests are green and every AC is checked.
@@ -164,10 +133,15 @@ On a hard blocker: set the story `status: blocked`, record the reason **and the 
 
 ## Files this skill touches
 
-- `web/**` — the production Next.js + Supabase app: code, tests, config, migrations (**created**; the only place this skill writes code).
+The **subagents** (`sprint-story-builder`) write the per-story output:
+- `web/**` — the production Next.js + Supabase app: code, tests, config, migrations.
 - `plan/stories/<topic>/story-*.md` — frontmatter (`status`, `tasks_populated`, `executed_date`), `## Tasks` state markers, `## Acceptance criteria` checkboxes, and `## Notes` (blocker reasons / manual-check records).
+
+The **orchestrator** (this skill) writes only:
+- `plan/stories/<topic>/story-*.md` — the `exec_model` / `escalated` frontmatter fields when escalating, and the working-tree reset before an Opus retry.
 - `plan/stories/INDEX.md` — regenerated at the end.
-- It does **not** write `plan/PRODUCT.md`, `plan/TECHNICAL-REQUIREMENTS.md`, `plan/UI-DESIGN-HANDOFF.md`, or `plan/design/*`.
+
+Neither writes `plan/PRODUCT.md`, `plan/TECHNICAL-REQUIREMENTS.md`, `plan/UI-DESIGN-HANDOFF.md`, or `plan/design/*`. (The one-time **Scaffold** is performed by the orchestrator on first run before any story.)
 
 ## When to bail and ask
 
