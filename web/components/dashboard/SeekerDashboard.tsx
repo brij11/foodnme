@@ -68,17 +68,16 @@ export function SeekerDashboard({
       <>
         <DashboardHeader title={`Welcome back, ${firstName}.`} subtitle="Track every role you've applied to." />
 
-        {/* 4-card stats grid (story-jobs-13). Profile views / Match score are not yet modeled,
-            so they render "—" rather than fabricated numbers (a future analytics story will wire them). */}
-        <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="seeker-stats">
+        {/* 2-card stats grid (story-auth-10). Profile views + Match score removed entirely per
+            UI-DESIGN-HANDOFF §3.8 — no "—" placeholder. Returns only when view-event tracking
+            + match-score definition land (OQ#13). */}
+        <div className="mb-6 grid grid-cols-2 gap-3" data-testid="seeker-stats">
           <StatCard
             label="Applications"
             value={String(stats.total)}
             sub={`${stats.submitted} submitted · ${stats.reviewed} reviewed · ${stats.rejected} closed`}
           />
           <StatCard label="Saved jobs" value={String(stats.saved)} />
-          <StatCard label="Profile views" value="—" />
-          <StatCard label="Match score" value="—" />
         </div>
 
         <div className="mb-5 flex flex-wrap gap-2">

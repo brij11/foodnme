@@ -39,18 +39,33 @@ function renderDash(opts: { applicants?: ApplicantRow[] } = {}) {
   );
 }
 
-describe("EmployerDashboard stats + applicants (story-jobs-14)", () => {
-  it("renders the 4-card stats grid with Avg time-to-hire as '—' (AC#1, #7)", () => {
+describe("EmployerDashboard stats grid (story-auth-10)", () => {
+  // story-auth-10 AC#2: only Active listings + Total applicants + Pending review shown
+  it("renders the 3 modeled stat tiles: Active listings, Total applicants, Pending review (AC#2)", () => {
     renderDash();
     const grid = screen.getByTestId("employer-stats");
     expect(within(grid).getByText("Active listings")).toBeInTheDocument();
     expect(within(grid).getByText("Total applicants")).toBeInTheDocument();
     expect(within(grid).getByText("Pending review")).toBeInTheDocument();
-    expect(within(grid).getByText("Avg. time to hire")).toBeInTheDocument();
-    expect(within(grid).getByText("—")).toBeInTheDocument(); // never fabricated
   });
 
-  it("Applicants tab lists candidate, role, status, and a resume link (AC#2, #3, #4)", () => {
+  // story-auth-10 AC#2: Avg. time to hire tile removed entirely — no placeholder
+  it("does NOT render an 'Avg. time to hire' tile (AC#2)", () => {
+    renderDash();
+    const grid = screen.getByTestId("employer-stats");
+    expect(within(grid).queryByText("Avg. time to hire")).toBeNull();
+  });
+
+  // story-auth-10 AC#5: no stray em-dash placeholder in stats grid
+  it("stats grid has no em-dash placeholder cell (AC#5)", () => {
+    renderDash();
+    const grid = screen.getByTestId("employer-stats");
+    expect(within(grid).queryByText("\u2014")).toBeNull();
+  });
+});
+
+describe("EmployerDashboard applicants list — no match-score column (story-auth-10 AC#3)", () => {
+  it("Applicants tab lists candidate, role, status, and a resume link (AC#3)", () => {
     renderDash();
     fireEvent.click(screen.getByRole("button", { name: "Applicants" }));
     const row = screen.getByTestId("applicant-row");
@@ -63,7 +78,16 @@ describe("EmployerDashboard stats + applicants (story-jobs-14)", () => {
     );
   });
 
-  it("shows an empty state when no applicants (AC#6)", () => {
+  // story-auth-10 AC#3: applicant row has no match-score column
+  it("applicant row does NOT display a match score percentage (AC#3)", () => {
+    renderDash();
+    fireEvent.click(screen.getByRole("button", { name: "Applicants" }));
+    const row = screen.getByTestId("applicant-row");
+    expect(within(row).queryByText(/match/i)).toBeNull();
+    expect(within(row).queryByText(/%/)).toBeNull();
+  });
+
+  it("shows an empty state when no applicants (AC#3)", () => {
     renderDash({ applicants: [] });
     fireEvent.click(screen.getByRole("button", { name: "Applicants" }));
     expect(screen.getByText("No applicants yet")).toBeInTheDocument();

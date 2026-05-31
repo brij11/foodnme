@@ -22,28 +22,41 @@ function renderDash(overrides: Partial<SeekerStats> = {}) {
   );
 }
 
-describe("SeekerDashboard stats grid (story-jobs-13)", () => {
-  it("shows the Applications total with a per-status breakdown (AC#2)", () => {
+describe("SeekerDashboard stats grid (story-auth-10)", () => {
+  it("shows the Applications total (AC#1)", () => {
     renderDash();
     const grid = screen.getByTestId("seeker-stats");
     expect(within(grid).getByText("Applications")).toBeInTheDocument();
     expect(within(grid).getByText("5")).toBeInTheDocument();
-    expect(within(grid).getByText("2 submitted · 2 reviewed · 1 closed")).toBeInTheDocument();
   });
 
-  it("shows the Saved jobs count (0 until story-jobs-15) (AC#3)", () => {
+  it("shows the Saved jobs count (AC#1)", () => {
     renderDash();
     const grid = screen.getByTestId("seeker-stats");
     expect(within(grid).getByText("Saved jobs")).toBeInTheDocument();
     expect(within(grid).getByText("0")).toBeInTheDocument();
   });
 
-  it("renders Profile views + Match score as '—' — never fabricated (AC#5)", () => {
+  // story-auth-10 AC#1: Profile views tile removed entirely — no "—" placeholder
+  it("does NOT render a 'Profile views' tile (AC#1)", () => {
     renderDash();
     const grid = screen.getByTestId("seeker-stats");
-    expect(within(grid).getByText("Profile views")).toBeInTheDocument();
-    expect(within(grid).getByText("Match score")).toBeInTheDocument();
-    // two em-dash placeholders, no invented numbers.
-    expect(within(grid).getAllByText("—")).toHaveLength(2);
+    expect(within(grid).queryByText("Profile views")).toBeNull();
+  });
+
+  // story-auth-10 AC#1: Match score tile removed entirely — no "—" placeholder
+  it("does NOT render a 'Match score' tile (AC#1)", () => {
+    renderDash();
+    const grid = screen.getByTestId("seeker-stats");
+    expect(within(grid).queryByText("Match score")).toBeNull();
+  });
+
+  // story-auth-10 AC#5: grid reflows cleanly with 2 tiles — no stray em-dash placeholder
+  it("stat grid contains exactly the 2 modeled stat cards with no empty placeholder cells (AC#5)", () => {
+    renderDash();
+    const grid = screen.getByTestId("seeker-stats");
+    expect(within(grid).queryByText("\u2014")).toBeNull();
+    expect(within(grid).getByText("Applications")).toBeInTheDocument();
+    expect(within(grid).getByText("Saved jobs")).toBeInTheDocument();
   });
 });

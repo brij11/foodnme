@@ -131,13 +131,13 @@ export function EmployerDashboard({
         <DashboardHeader title="Employer dashboard" subtitle="Manage your job postings and review applicants." />
         <Button onClick={() => setModalOpen(true)}>Post a job</Button>
       </div>
-      {/* 4-card stats grid (story-jobs-14). Avg. time to hire isn't modeled (no hire-event
-          tracking) so it renders "—" — never a fabricated number; a future story wires it. */}
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="employer-stats">
+      {/* 3-card stats grid (story-auth-10). Avg. time to hire removed entirely per
+          UI-DESIGN-HANDOFF §3.8 — no "—" placeholder. Returns only when hire-event
+          timestamps are modeled (OQ#13). */}
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-3" data-testid="employer-stats">
         <StatCard label="Active listings" value={String(stats.activeListings)} />
         <StatCard label="Total applicants" value={String(stats.totalApplicants)} />
         <StatCard label="Pending review" value={String(stats.pendingReview)} />
-        <StatCard label="Avg. time to hire" value="—" />
       </div>
     </>
   );
