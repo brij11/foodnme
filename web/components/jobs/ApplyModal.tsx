@@ -130,7 +130,7 @@ export function ApplyModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="apply-modal-title"
-        className="relative flex min-h-full w-full flex-col overflow-hidden bg-card-bg shadow-elevated sm:min-h-0 sm:max-w-[560px] sm:rounded-xl sm:border sm:border-border"
+        className="relative flex min-h-full w-full flex-col overflow-hidden bg-card-bg shadow-elevated motion-safe:animate-modal-pop sm:min-h-0 sm:max-w-[560px] sm:rounded-xl sm:border sm:border-border"
         onClick={(e) => e.stopPropagation()}
       >
         <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-surface-light hover:text-text">

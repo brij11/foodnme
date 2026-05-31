@@ -28,3 +28,25 @@ describe("tailwind theme tokens", () => {
     expect(fonts.mono?.[0]).toBe("var(--font-mono)");
   });
 });
+
+// story-homepage-10 — Modal entry animation (AC#1, AC#2)
+describe("modal-pop animation (story-homepage-10)", () => {
+  it("defines a modal-pop keyframe with translateY + scale + opacity (AC#1)", () => {
+    const keyframes = (config.theme?.extend?.keyframes ?? {}) as Record<
+      string,
+      Record<string, Record<string, string>>
+    >;
+    expect(keyframes["modal-pop"]).toBeDefined();
+    const from = keyframes["modal-pop"]?.["0%"];
+    expect(from?.opacity).toBe("0");
+    expect(from?.transform).toContain("translateY");
+    expect(from?.transform).toContain("scale");
+  });
+
+  it("registers animate-modal-pop utility (~280ms, cubic-bezier spring) (AC#1)", () => {
+    const animations = (config.theme?.extend?.animation ?? {}) as Record<string, string>;
+    expect(animations["modal-pop"]).toBeDefined();
+    expect(animations["modal-pop"]).toContain("modal-pop");
+    expect(animations["modal-pop"]).toContain("280ms");
+  });
+});

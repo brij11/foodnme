@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { Input, Textarea } from "@/components/ui/form";
 import { Turnstile } from "@/components/turnstile/Turnstile";
 import { consultationSchema, CONSULTATION_SERVICE } from "@/lib/schemas/inquiry";
@@ -80,9 +81,15 @@ export function ConsultationForm({ onClose }: { onClose: () => void }) {
 
   if (status === "success") {
     return (
-      <div role="status" className="rounded-lg border-l-4 border-secondary bg-tag-safe-bg px-5 py-6 text-tag-safe-text">
-        <h3 className="font-heading text-[1.05rem] font-bold">Inquiry received.</h3>
-        <p className="mt-1 font-body text-[0.9rem]">We&apos;ll respond within 24 hours. Closing…</p>
+      // Centered check-circle confirmation — handoff §3.4 + DEVIATIONS D11.
+      <div role="status" className="px-2 py-8 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-tag-safe-bg text-tag-safe-text">
+          <Icon name="check" size={28} stroke={2.4} />
+        </div>
+        <h3 className="mt-5 font-heading text-[1.3rem] font-bold text-text">Inquiry received.</h3>
+        <p className="mx-auto mt-2 max-w-[320px] font-body text-[0.9rem] leading-relaxed text-muted">
+          We&apos;ll respond within 24 hours. Closing…
+        </p>
       </div>
     );
   }

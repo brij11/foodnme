@@ -118,7 +118,7 @@ export function ContactExpertModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="contact-expert-title"
-        className="relative flex min-h-full w-full flex-col overflow-hidden bg-card-bg shadow-elevated sm:min-h-0 sm:max-w-[560px] sm:rounded-xl sm:border sm:border-border"
+        className="relative flex min-h-full w-full flex-col overflow-hidden bg-card-bg shadow-elevated motion-safe:animate-modal-pop sm:min-h-0 sm:max-w-[560px] sm:rounded-xl sm:border sm:border-border"
         onClick={(e) => e.stopPropagation()}
       >
         <button

@@ -31,7 +31,7 @@ export function PostJobModal({ onClose }: { onClose: () => void }) {
     expires_at: "",
   });
   const [token, setToken] = useState("");
-  const [status, setStatus] = useState<"idle" | "submitting">("idle");
+  const [status, setStatus] = useState<"idle" | "submitting" | "success">("idle");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -81,8 +81,10 @@ export function PostJobModal({ onClose }: { onClose: () => void }) {
       });
       const json = (await res.json().catch(() => null)) as { ok?: boolean } | null;
       if (res.ok && json?.ok) {
-        onClose();
+        setStatus("success");
         router.refresh();
+        // Auto-close after 3 seconds so the user can read the confirmation (handoff §3.4).
+        setTimeout(onClose, 3000);
       } else {
         setStatus("idle");
         setError("Could not post your job. Please check the fields and try again.");
@@ -97,10 +99,27 @@ export function PostJobModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-stretch justify-center overflow-y-auto bg-[rgba(40,54,24,0.42)] backdrop-blur-sm sm:items-start sm:px-6 sm:pb-6 sm:pt-10" onClick={onClose}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="post-job-title" className="relative w-full bg-card-bg shadow-elevated sm:max-w-[600px] sm:rounded-xl sm:border sm:border-border" onClick={(e) => e.stopPropagation()}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="post-job-title" className="relative w-full bg-card-bg shadow-elevated motion-safe:animate-modal-pop sm:max-w-[600px] sm:rounded-xl sm:border sm:border-border" onClick={(e) => e.stopPropagation()}>
         <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-surface-light">
           <Icon name="close" size={18} />
         </button>
+        {status === "success" ? (
+          <div className="px-8 py-12 text-center sm:px-10">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-tag-safe-bg text-tag-safe-text">
+              <Icon name="check" size={28} stroke={2.4} />
+            </div>
+            <p className="mt-5 font-heading text-[0.65rem] font-bold uppercase tracking-[0.14em] text-primary">
+              Submitted
+            </p>
+            <h2 id="post-job-title" className="mt-2 font-heading text-[1.4rem] font-bold text-text">
+              Your job is under review
+            </h2>
+            <p className="mx-auto mt-3 max-w-[380px] font-body text-[0.95rem] leading-relaxed text-muted">
+              Our team will review your posting and publish it within 24 hours. Closing…
+            </p>
+          </div>
+        ) : (
+          <>
         <div className="border-b border-border px-7 pb-5 pt-8 sm:px-9">
           <p className="font-heading text-[0.65rem] font-bold uppercase tracking-[0.14em] text-primary">New posting</p>
           <h2 id="post-job-title" className="mt-2 font-heading text-[1.3rem] font-bold text-text">Post a job</h2>
@@ -135,6 +154,8 @@ export function PostJobModal({ onClose }: { onClose: () => void }) {
             {status === "submitting" ? "Submitting…" : "Submit for review"}
           </button>
         </form>
+          </>
+        )}
       </div>
     </div>
   );

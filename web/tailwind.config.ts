@@ -76,10 +76,19 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateY(10px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        // UI-DESIGN-HANDOFF.md §3.4 — modal entry: translateY + scale + opacity, matches
+        // plan/design/styles.css:1181-1184 (@keyframes modal-pop). Motion-reduce suppresses
+        // this via the `motion-safe:animate-modal-pop` utility (AC §4.10 animation policy).
+        "modal-pop": {
+          "0%": { opacity: "0", transform: "translateY(20px) scale(0.96)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
       },
       animation: {
         // Card-grid stagger entry (UI-DESIGN-HANDOFF.md §4.10); per-child delay set inline.
         "fade-up": "fade-up 0.4s ease both",
+        // Modal sheet entry — cubic-bezier matches the prototype's spring feel (styles.css:1178).
+        "modal-pop": "modal-pop 280ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both",
       },
     },
   },

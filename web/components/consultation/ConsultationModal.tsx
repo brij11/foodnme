@@ -51,7 +51,7 @@ export function ConsultationModal({ onClose }: { onClose: () => void }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="consultation-modal-title"
-        className="relative flex min-h-full w-full flex-col overflow-hidden border-border bg-background shadow-elevated sm:min-h-0 sm:max-w-[580px] sm:rounded-xl sm:border"
+        className="relative flex min-h-full w-full flex-col overflow-hidden border-border bg-background shadow-elevated motion-safe:animate-modal-pop sm:min-h-0 sm:max-w-[580px] sm:rounded-xl sm:border"
         onClick={(e) => e.stopPropagation()}
       >
         <button
