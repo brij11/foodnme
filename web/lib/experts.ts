@@ -90,6 +90,30 @@ export async function listExperts(filters: ExpertFilters = {}): Promise<ExpertCa
   return (data as ExpertCardData[] | null) ?? [];
 }
 
+/** The featured-expert card needs `experience_years` for the "title · N yrs" line. */
+export type FeaturedExpert = ExpertCardData & { experience_years: number };
+
+/**
+ * The single expert for the homepage "Featured this week" block (story-homepage-07):
+ * `WHERE is_featured AND status='active' ORDER BY created_at desc LIMIT 1`, falling back to the
+ * most-recent active expert when none is flagged. (The admin "approve" action transitions an
+ * expert pending → `active`, so the story's "approved" maps to the implemented `status='active'`;
+ * RLS also restricts the anon client to active rows.) Returns null when no active expert exists,
+ * so the caller renders the §5.4 stub.
+ */
+export async function getFeaturedExpert(): Promise<FeaturedExpert | null> {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("experts")
+    .select(`${CARD_COLUMNS}, experience_years`)
+    .eq("status", "active")
+    .order("is_featured", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (error) throw new Error(`getFeaturedExpert failed: ${error.message}`);
+  return ((data as FeaturedExpert[] | null) ?? [])[0] ?? null;
+}
+
 /** Full expert profile for the detail page — still WITHOUT `contact_email` (anti-harvesting). */
 export type ExpertDetail = ExpertCardData & {
   experience_years: number;

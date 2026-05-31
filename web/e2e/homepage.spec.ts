@@ -54,6 +54,22 @@ test.describe("public layout + homepage (homepage-02)", () => {
     );
   });
 
+  test("Featured this week pairs a template + expert; newsletter at the foot (homepage-07)", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(
+      page.getByRole("heading", { name: /Two things worth your time/ }),
+    ).toBeVisible();
+    // Most-downloaded template half links to a /templates detail page.
+    await expect(page.getByText(/Most downloaded ·/)).toBeVisible();
+    const templateLink = page.getByRole("link", { name: /Download template/ });
+    await expect(templateLink).toHaveAttribute("href", /^\/templates\/.+/);
+    // Newsletter banner (the shared component) at the page foot.
+    await expect(page.getByRole("heading", { name: /Stay ahead in food technology/ })).toBeVisible();
+    await expect(page.getByPlaceholder("you@company.com")).toBeVisible();
+  });
+
   test("skip-to-content link reveals on focus (AC#10)", async ({ page }) => {
     await page.goto("/");
     await page.keyboard.press("Tab");

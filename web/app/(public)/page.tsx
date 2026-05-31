@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getSiteStats } from "@/lib/stats";
 import { getLatestArticles, getFeaturedArticle } from "@/lib/articles";
+import { getFeaturedTemplate } from "@/lib/resources";
+import { getFeaturedExpert } from "@/lib/experts";
 import { Hero } from "@/components/home/Hero";
 import { ValueStrip } from "@/components/home/ValueStrip";
 import { Scenarios } from "@/components/home/Scenarios";
@@ -9,8 +11,10 @@ import { EditorialFeature } from "@/components/home/EditorialFeature";
 import { LatestArticlesRail } from "@/components/home/LatestArticlesRail";
 import { Testimonials } from "@/components/home/Testimonials";
 import { HomeStats } from "@/components/home/HomeStats";
+import { FeaturedThisWeek } from "@/components/home/FeaturedThisWeek";
 import { FinalCta } from "@/components/home/FinalCta";
 import { GoodToKnow } from "@/components/home/GoodToKnow";
+import { NewsletterBanner } from "@/components/newsletter/NewsletterBanner";
 
 /**
  * Homepage — the narrative arc of UI-DESIGN-HANDOFF.md §3.6, built across stories
@@ -40,10 +44,12 @@ export default async function HomePage() {
   // The editorial feature (story-homepage-06) and the "Latest from the blog" rail
   // (story-homepage-04) share one feature selection so no article appears twice: fetch the
   // feature once here, then exclude its slug from the rail (story-homepage-04 AC#1).
-  const [stats, recentCovers, featured] = await Promise.all([
+  const [stats, recentCovers, featured, featuredTemplate, featuredExpert] = await Promise.all([
     getSiteStats(),
     getLatestArticles({ limit: 2 }),
     getFeaturedArticle(),
+    getFeaturedTemplate(),
+    getFeaturedExpert(),
   ]);
   const latestArticles = await getLatestArticles({
     limit: 4,
@@ -76,7 +82,8 @@ export default async function HomePage() {
       {/* §3.6 #6 */}
       <HomeStats stats={stats} />
 
-      {/* §3.6 #7 Featured this week — homepage-07 */}
+      {/* §3.6 #7 */}
+      <FeaturedThisWeek template={featuredTemplate} expert={featuredExpert} />
 
       {/* §3.6 #8 */}
       <FinalCta />
@@ -84,7 +91,10 @@ export default async function HomePage() {
       {/* §3.6 #9 */}
       <GoodToKnow />
 
-      {/* §3.6 #10 Newsletter — homepage-07 */}
+      {/* §3.6 #10 — newsletter, page foot */}
+      <section className="mx-auto max-w-content px-6 py-16 lg:px-12">
+        <NewsletterBanner source="homepage" />
+      </section>
     </>
   );
 }

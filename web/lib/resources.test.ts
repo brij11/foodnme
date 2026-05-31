@@ -7,6 +7,7 @@ import {
   getResourceBySlug,
   getTemplateCategoryCounts,
   getSimilarTemplates,
+  getFeaturedTemplate,
   parseWhatsIncluded,
 } from "./resources";
 import { createPublicClient as createClient } from "@/lib/supabase/public";
@@ -52,6 +53,23 @@ describe("listResources (templates-01)", () => {
     const c = chain({ data: null, error: null });
     vi.mocked(createClient).mockReturnValue({ from: () => c } as never);
     expect(await listResources()).toEqual([]);
+  });
+
+  describe("getFeaturedTemplate (story-homepage-07)", () => {
+    it("returns the single most-downloaded template", async () => {
+      const c = chain({ data: [{ slug: "top", download_count: 1840 }], error: null });
+      vi.mocked(createClient).mockReturnValue({ from: () => c } as never);
+      const out = await getFeaturedTemplate();
+      expect(out?.slug).toBe("top");
+      expect(c.order).toHaveBeenCalledWith("download_count", { ascending: false });
+      expect(c.limit).toHaveBeenCalledWith(1);
+    });
+
+    it("returns null when there are no resources", async () => {
+      const c = chain({ data: [], error: null });
+      vi.mocked(createClient).mockReturnValue({ from: () => c } as never);
+      expect(await getFeaturedTemplate()).toBeNull();
+    });
   });
 });
 

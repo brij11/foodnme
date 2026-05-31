@@ -57,6 +57,26 @@ export async function listResources(
   return (data as Resource[] | null) ?? [];
 }
 
+/** A featured template carries the `created_at` the homepage hero card uses for "Updated …". */
+export type FeaturedTemplate = Resource & { created_at: string };
+
+/**
+ * The single most-downloaded template for the homepage "Featured this week" block
+ * (story-homepage-07): `ORDER BY download_count desc LIMIT 1`. Returns null when there are no
+ * resources. Note: the `resources` table has no page-count column (a production decision from
+ * templates-01), so the card shows "Updated {created_at}" rather than a page count.
+ */
+export async function getFeaturedTemplate(): Promise<FeaturedTemplate | null> {
+  const supabase = createPublicClient();
+  const { data, error } = await supabase
+    .from("resources")
+    .select(`${RESOURCE_COLUMNS}, created_at`)
+    .order("download_count", { ascending: false })
+    .limit(1);
+  if (error) throw new Error(`getFeaturedTemplate failed: ${error.message}`);
+  return ((data as FeaturedTemplate[] | null) ?? [])[0] ?? null;
+}
+
 /** All template slugs — for `generateStaticParams` on the detail page (templates-02). */
 export async function getAllTemplateSlugs(): Promise<string[]> {
   const supabase = createPublicClient();
